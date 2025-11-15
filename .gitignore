@@ -1,0 +1,102 @@
+# Flutter/Dart
+
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code related
+.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+
+# Generated files
+*.g.dart
+*.freezed.dart
+*.gr.dart
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Web related
+/web/
+
+# Hive databases
+*.hive
+*.lock
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Local History for Visual Studio Code
+.history/
+
+# Build outputs
+*.apk
+*.aab
+*.ipa
+*.app
+*.exe
+*.dmg
+*.deb
+*.rpm
+*.tar.gz
+*.zip
+
+# Platform specific
+windows/
+macos/
+linux/
+android/
+ios/
+
+# Coverage
+coverage/
+*.lcov
+
+# Exceptions - keep these platform folders if they exist
+!windows/.gitkeep
+!macos/.gitkeep
+!linux/.gitkeep
+!android/.gitkeep
+!ios/.gitkeep
