@@ -54,7 +54,9 @@ dev_dependencies:
   riverpod_lint: ^3.0.0
 
   # Hive 程式碼生成
-  hive_generator: ^2.0.1
+  # 注意：hive_generator 與 riverpod_lint 3.0 有 analyzer 版本衝突
+  # 目前暫時移除，待需要建立 TypeAdapter 時再添加
+  # hive_generator: ^2.0.1
 
 flutter:
   uses-material-design: true
