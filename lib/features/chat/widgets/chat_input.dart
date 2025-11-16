@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../providers/chat_provider.dart';
 
@@ -33,7 +32,6 @@ class _ChatInputState extends ConsumerState<ChatInput> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -58,7 +56,7 @@ class _ChatInputState extends ConsumerState<ChatInput> {
               minLines: 1,
               textInputAction: TextInputAction.newline,
               decoration: InputDecoration(
-                hintText: l10n.chatInputHint,
+                hintText: '在此輸入訊息...',
                 filled: true,
                 fillColor: theme.colorScheme.surfaceContainerHighest,
                 border: OutlineInputBorder(

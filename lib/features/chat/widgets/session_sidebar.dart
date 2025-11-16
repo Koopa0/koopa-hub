@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../models/chat_session.dart';
 import '../providers/chat_provider.dart';
@@ -79,8 +78,6 @@ class SessionSidebar extends ConsumerWidget {
   }
 
   Widget _buildHeader(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context)!;
-
     return Padding(
       padding: const EdgeInsets.all(12),
       child: SizedBox(
@@ -90,20 +87,18 @@ class SessionSidebar extends ConsumerWidget {
             ref.read(chatSessionsProvider.notifier).createSession();
           },
           icon: const Icon(Icons.add),
-          label: Text(l10n.chatNewConversation),
+          label: const Text('新對話'),
         ),
       ),
     );
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Text(
-          l10n.chatNoConversations,
+          '還沒有任何對話\n點擊上方按鈕開始',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -136,7 +131,6 @@ class _SessionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final l10n = AppLocalizations.of(context)!;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -205,7 +199,7 @@ class _SessionTile extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      _formatTime(session.updatedAt, l10n),
+                      _formatTime(session.updatedAt),
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -242,7 +236,7 @@ class _SessionTile extends StatelessWidget {
             children: [
               Icon(session.isPinned ? Icons.push_pin_outlined : Icons.push_pin),
               const SizedBox(width: 12),
-              Text(session.isPinned ? l10n.chatUnpin : l10n.chatPin),
+              Text(session.isPinned ? '取消置頂' : '置頂'),
             ],
           ),
         ),
@@ -255,7 +249,7 @@ class _SessionTile extends StatelessWidget {
                 children: [
                   Icon(Icons.delete_outline, color: errorColor),
                   const SizedBox(width: 12),
-                  Text(l10n.commonDelete, style: TextStyle(color: errorColor)),
+                  Text('刪除', style: TextStyle(color: errorColor)),
                 ],
               );
             },
@@ -276,15 +270,13 @@ class _SessionTile extends StatelessWidget {
   }
 
   Future<void> _showDeleteDialog(BuildContext context) async {
-    final l10n = AppLocalizations.of(context)!;
-
     final confirmed = await ConfirmationDialog.show(
       context: context,
-      title: l10n.chatDeleteConversation,
-      message: l10n.chatDeleteConversationMessage,
+      title: '刪除對話',
+      message: '確定要刪除這個對話嗎？此操作無法復原。',
       icon: Icons.delete_outline,
-      confirmText: l10n.commonDelete,
-      cancelText: l10n.commonCancel,
+      confirmText: '刪除',
+      cancelText: '取消',
       isDestructive: true,
     );
 
@@ -298,7 +290,7 @@ class _SessionTile extends StatelessWidget {
   /// - 今天：顯示時間 (例如：14:30)
   /// - 昨天：顯示「昨天」
   /// - 其他：顯示日期 (例如：1/15)
-  String _formatTime(DateTime dateTime, AppLocalizations l10n) {
+  String _formatTime(DateTime dateTime) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
@@ -307,7 +299,7 @@ class _SessionTile extends StatelessWidget {
     if (date == today) {
       return DateFormat('HH:mm').format(dateTime);
     } else if (date == yesterday) {
-      return l10n.commonYesterday;
+      return '昨天';
     } else {
       return DateFormat('M/d').format(dateTime);
     }
