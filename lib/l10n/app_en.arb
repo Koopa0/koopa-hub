@@ -109,7 +109,7 @@
   "@chatDemoQuestion2": {
     "description": "Demo question 2"
   },
-  "chatDemoAnswer2": "Of course! Here's a simple Riverpod example:\n\n```dart\n@riverpod\nclass Counter extends _$Counter {\n  @override\n  int build() => 0;\n\n  void increment() => state++;\n  void decrement() => state--;\n}\n```\n\nUsing in UI:\n\n```dart\nfinal count = ref.watch(counterProvider);\n```\n\nClick the action bar above the message to copy, edit, or delete messages!",
+  "chatDemoAnswer2": "Of course! Here's a simple Riverpod example:\n\n```dart\n@riverpod\nclass Counter extends _$Counter '{'\n  @override\n  int build() => 0;\n\n  void increment() => state++;\n  void decrement() => state--;\n'}'\n```\n\nUsing in UI:\n\n```dart\nfinal count = ref.watch(counterProvider);\n```\n\nClick the action bar above the message to copy, edit, or delete messages!",
   "@chatDemoAnswer2": {
     "description": "Demo answer 2"
   },

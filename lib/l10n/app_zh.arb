@@ -27,7 +27,7 @@
   "chatDemoQuestion1": "什麼是 Flutter 的狀態管理？",
   "chatDemoAnswer1": "Flutter 提供多種狀態管理方案，包括：\n\n1. **Provider** - Google 官方推薦的狀態管理方案\n2. **Riverpod** - Provider 的改進版，提供更好的類型安全\n3. **Bloc** - 使用事件驅動的狀態管理\n4. **GetX** - 輕量級的狀態管理和路由方案\n\n在這個專案中，我們使用 **Riverpod 3.0** 配合程式碼生成，提供類型安全和更簡潔的 API。",
   "chatDemoQuestion2": "可以舉個 Riverpod 的例子嗎？",
-  "chatDemoAnswer2": "當然！這是一個簡單的 Riverpod 範例：\n\n```dart\n@riverpod\nclass Counter extends _$Counter {\n  @override\n  int build() => 0;\n\n  void increment() => state++;\n  void decrement() => state--;\n}\n```\n\n在 UI 中使用：\n\n```dart\nfinal count = ref.watch(counterProvider);\n```\n\n點擊訊息上方的操作列可以複製、編輯或刪除訊息！",
+  "chatDemoAnswer2": "當然！這是一個簡單的 Riverpod 範例：\n\n```dart\n@riverpod\nclass Counter extends _$Counter '{'\n  @override\n  int build() => 0;\n\n  void increment() => state++;\n  void decrement() => state--;\n'}'\n```\n\n在 UI 中使用：\n\n```dart\nfinal count = ref.watch(counterProvider);\n```\n\n點擊訊息上方的操作列可以複製、編輯或刪除訊息！",
   "chatMockResponse": "這是一個模擬回應。真實的 API 整合將在後端完成後實作。",
   "chatSendFailed": "❌ 發送失敗",
   "chatErrorOccurred": "發生錯誤，請稍後再試。",
