@@ -7,6 +7,7 @@ import 'package:flutter_highlighter/theme_map.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import '../../../core/constants/design_tokens.dart';
 import '../providers/chat_provider.dart';
 import '../models/message.dart';
 import 'message_action_bar.dart';
@@ -73,7 +74,7 @@ class _MessageListState extends ConsumerState<MessageList> {
 
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.all(16),
+      padding: DesignTokens.paddingAll16,
       itemCount: messages.length,
       itemBuilder: (context, index) {
         final message = messages[index];
@@ -95,17 +96,17 @@ class _MessageListState extends ConsumerState<MessageList> {
         children: [
           Icon(
             Icons.chat,
-            size: 64,
+            size: DesignTokens.iconSize3xl,
             color: theme.colorScheme.outlineVariant,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: DesignTokens.space16),
           Text(
             l10n.chatEmptyTitle,
             style: theme.textTheme.titleMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: DesignTokens.space8),
           Text(
             l10n.chatEmptyMessage,
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -189,7 +190,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.only(bottom: DesignTokens.space16),
         child: Row(
           mainAxisAlignment:
               isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
