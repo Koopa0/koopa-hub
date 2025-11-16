@@ -167,7 +167,8 @@ class CurrentSessionId extends _$CurrentSessionId {
 /// 1. 自動重新計算
 /// 2. 避免重複的狀態
 /// 3. 保持資料的單一來源（single source of truth）
-final currentSessionProvider = Provider<ChatSession?>((ref) {
+@riverpod
+ChatSession? currentSession(CurrentSessionRef ref) {
   final sessionId = ref.watch(currentSessionIdProvider);
   if (sessionId == null) return null;
 
@@ -177,16 +178,17 @@ final currentSessionProvider = Provider<ChatSession?>((ref) {
   } catch (e) {
     return null;
   }
-});
+}
 
 /// 當前會話的訊息列表 Provider
 ///
 /// 另一個衍生 provider
 /// 直接提供當前會話的訊息列表，簡化 UI 層的程式碼
-final currentMessagesProvider = Provider<List<Message>>((ref) {
+@riverpod
+List<Message> currentMessages(CurrentMessagesRef ref) {
   final session = ref.watch(currentSessionProvider);
   return session?.messages ?? [];
-});
+}
 
 /// 聊天服務 Provider（用於發送訊息）
 ///
@@ -206,15 +208,28 @@ class ChatService extends _$ChatService {
   /// 2. 呼叫 API
   /// 3. 接收串流回應
   /// 4. 更新 AI 訊息
+  /// 5. 處理錯誤並提供用戶反饋
   Future<void> sendMessage(String content) async {
+    // 驗證輸入
+    if (content.trim().isEmpty) {
+      debugPrint('Cannot send empty message');
+      return;
+    }
+
     // 獲取當前會話
     final sessionId = ref.read(currentSessionIdProvider);
-    if (sessionId == null) return;
+    if (sessionId == null) {
+      debugPrint('No session selected');
+      return;
+    }
 
     final session = ref.read(chatSessionsProvider.notifier).getSession(
           sessionId,
         );
-    if (session == null) return;
+    if (session == null) {
+      debugPrint('Session not found: $sessionId');
+      return;
+    }
 
     // 1. 添加使用者訊息
     final userMessage = Message.user(content);
@@ -223,29 +238,49 @@ class ChatService extends _$ChatService {
 
     // 2. 添加一個空的 AI 訊息（用於串流）
     final aiMessage = Message.assistant('', isStreaming: true);
-    final sessionWithAi = updatedSession.addMessage(aiMessage);
+    var sessionWithAi = updatedSession.addMessage(aiMessage);
     ref.read(chatSessionsProvider.notifier).updateSession(sessionWithAi);
 
-    // TODO: 3. 呼叫 API 並處理串流回應
-    // 這裡先用模擬回應
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      // TODO: 3. 呼叫 API 並處理串流回應
+      // 這裡先用模擬回應
+      await Future.delayed(const Duration(seconds: 1));
 
-    final mockResponse = '這是一個模擬回應。真實的 API 整合將在後端完成後實作。';
-    final completedMessage = aiMessage.copyWith(
-      content: mockResponse,
-      isStreaming: false,
-    );
+      final mockResponse =
+          '這是一個模擬回應。真實的 API 整合將在後端完成後實作。';
+      final completedMessage = aiMessage.copyWith(
+        content: mockResponse,
+        isStreaming: false,
+      );
 
-    final finalSession = sessionWithAi.updateLastMessage(completedMessage);
-    ref.read(chatSessionsProvider.notifier).updateSession(finalSession);
+      final finalSession = sessionWithAi.updateLastMessage(completedMessage);
+      ref.read(chatSessionsProvider.notifier).updateSession(finalSession);
 
-    // 4. 如果是第一條訊息，自動更新標題
-    if (session.messages.isEmpty) {
-      final title = content.length > 30
-          ? '${content.substring(0, 30)}...'
-          : content;
-      final sessionWithTitle = finalSession.updateTitle(title);
-      ref.read(chatSessionsProvider.notifier).updateSession(sessionWithTitle);
+      // 4. 如果是第一條訊息，自動更新標題
+      if (session.messages.isEmpty) {
+        final title = content.length > 30
+            ? '${content.substring(0, 30)}...'
+            : content;
+        final sessionWithTitle = finalSession.updateTitle(title);
+        ref.read(chatSessionsProvider.notifier).updateSession(sessionWithTitle);
+      }
+    } catch (e, stackTrace) {
+      debugPrint('Failed to send message: $e');
+      debugPrint('Stack trace: $stackTrace');
+
+      // 更新 AI 訊息為錯誤狀態
+      final errorMessage = aiMessage.copyWith(
+        content: '❌ 發送失敗\n\n'
+            '發生錯誤，請稍後再試。\n'
+            '錯誤詳情: ${e.toString()}',
+        isStreaming: false,
+      );
+
+      final errorSession = sessionWithAi.updateLastMessage(errorMessage);
+      ref.read(chatSessionsProvider.notifier).updateSession(errorSession);
+
+      // TODO: 可以選擇性地添加重試機制
+      // TODO: 可以選擇性地顯示 SnackBar 通知用戶
     }
   }
 }
