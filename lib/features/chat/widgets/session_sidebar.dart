@@ -53,8 +53,8 @@ class SessionSidebar extends ConsumerWidget {
                         session: session,
                         isSelected: isSelected,
                         onTap: () {
-                          ref.read(currentSessionIdProvider.notifier).state =
-                              session.id;
+                          ref.read(currentSessionIdProvider.notifier)
+                              .setSessionId(session.id);
                         },
                         onDelete: () {
                           ref

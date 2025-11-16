@@ -92,18 +92,22 @@ class ChatSessions extends _$ChatSessions {
 
 /// 當前活躍會話 ID Provider
 ///
-/// 使用 StateProvider 來管理簡單的狀態
-/// StateProvider 適合用於：
-/// 1. 簡單的值（String, int, bool 等）
-/// 2. 需要從 UI 直接更新的狀態
-final currentSessionIdProvider = StateProvider<String?>((ref) {
-  // 監聽會話列表
-  final sessions = ref.watch(chatSessionsProvider);
+/// 使用 Riverpod 3.0 code generation 來管理簡單的狀態
+/// 管理當前選擇的會話 ID
+@riverpod
+class CurrentSessionId extends _$CurrentSessionId {
+  @override
+  String? build() {
+    // 監聽會話列表
+    final sessions = ref.watch(chatSessionsProvider);
 
-  // 如果沒有選中的會話，自動選擇第一個
-  if (sessions.isEmpty) return null;
-  return sessions.first.id;
-});
+    // 如果沒有選中的會話，自動選擇第一個
+    if (sessions.isEmpty) return null;
+    return sessions.first.id;
+  }
+
+  void setSessionId(String? id) => state = id;
+}
 
 /// 當前會話 Provider
 ///

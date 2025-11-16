@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_highlighter/flutter_highlighter.dart';
 import 'package:flutter_highlighter/themes/github.dart';
-import 'package:flutter_highlighter/themes/github-dark.dart';
+import 'package:flutter_highlighter/theme_map.dart';
 import 'package:markdown/markdown.dart' as md;
 
 import '../providers/chat_provider.dart';
@@ -331,7 +331,7 @@ class _CodeBlockBuilder extends MarkdownElementBuilder {
             child: HighlightView(
               code,
               language: language,
-              theme: isDark ? githubDarkTheme : githubTheme,
+              theme: isDark ? themeMap['github-dark-dimmed']! : githubTheme,
               padding: EdgeInsets.zero,
               textStyle: const TextStyle(
                 fontFamily: 'monospace',
