@@ -1,13 +1,11 @@
 {
   "@@locale": "en",
 
-  "_comment_app": "=== App Info ===",
   "appName": "Koopa Hub",
   "@appName": {
     "description": "The application name"
   },
 
-  "_comment_navigation": "=== Navigation ===",
   "navChat": "Chat",
   "@navChat": {
     "description": "Chat navigation label"
@@ -21,7 +19,6 @@
     "description": "Settings navigation label"
   },
 
-  "_comment_chat": "=== Chat Feature ===",
   "chatWelcomeTitle": "Welcome to Koopa Hub",
   "@chatWelcomeTitle": {
     "description": "Welcome chat session title"
@@ -68,7 +65,6 @@
     "description": "Model selector label"
   },
 
-  "_comment_knowledge": "=== Knowledge Base ===",
   "knowledgeTitle": "Knowledge Base",
   "@knowledgeTitle": {
     "description": "Knowledge base page title"
@@ -134,7 +130,6 @@
     "description": "Empty state message"
   },
 
-  "_comment_settings": "=== Settings ===",
   "settingsTitle": "Settings",
   "@settingsTitle": {
     "description": "Settings page title"
@@ -212,7 +207,6 @@
     "description": "GitHub button"
   },
 
-  "_comment_common": "=== Common ===",
   "commonCancel": "Cancel",
   "@commonCancel": {
     "description": "Cancel button"
