@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import '../providers/knowledge_provider.dart';
 import '../widgets/document_list.dart';
 import '../widgets/knowledge_stats.dart';
+import '../../../core/widgets/empty_state.dart';
 
 /// 知識庫管理頁面
 ///
@@ -81,39 +82,12 @@ class KnowledgePage extends ConsumerWidget {
   }
 
   Widget _buildEmptyState(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.library_books_outlined,
-            size: 80,
-            color: theme.colorScheme.outlineVariant,
-          ),
-          const SizedBox(height: 24),
-          Text(
-            '知識庫是空的',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '添加文件或資料夾開始建立您的知識庫',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: () => _pickFiles(context, ref),
-            icon: const Icon(Icons.add),
-            label: const Text('添加文件'),
-          ),
-        ],
-      ),
+    return EmptyState(
+      icon: Icons.library_books_outlined,
+      title: '知識庫是空的',
+      message: '添加文件或資料夾開始建立您的知識庫',
+      action: () => _pickFiles(context, ref),
+      actionLabel: '添加文件',
     );
   }
 

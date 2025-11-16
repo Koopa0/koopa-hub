@@ -26,12 +26,61 @@ class ChatSessions extends _$ChatSessions {
   @override
   List<ChatSession> build() {
     // TODO: 從本地儲存（Hive）載入會話列表
-    // 現在先返回一個示範會話
-    return [
-      ChatSession.create(
-        title: '歡迎使用 Koopa Hub',
-      ),
-    ];
+    // 現在先返回示範會話，展示新功能
+
+    // 創建示範會話，展示 MessageActionBar 和 SourceCitation
+    final demoSession = ChatSession.create(
+      title: '歡迎使用 Koopa Hub',
+    );
+
+    // 添加示範訊息
+    final userMessage1 = Message.user('什麼是 Flutter 的狀態管理？');
+    final aiMessage1 = Message.assistant(
+      'Flutter 提供多種狀態管理方案，包括：\n\n'
+      '1. **Provider** - Google 官方推薦的狀態管理方案\n'
+      '2. **Riverpod** - Provider 的改進版，提供更好的類型安全\n'
+      '3. **Bloc** - 使用事件驅動的狀態管理\n'
+      '4. **GetX** - 輕量級的狀態管理和路由方案\n\n'
+      '在這個專案中，我們使用 **Riverpod 3.0** 配合程式碼生成，'
+      '提供類型安全和更簡潔的 API。',
+      citations: [
+        'Flutter 官方文件 - 狀態管理',
+        'Riverpod 文件',
+        'Flutter 實戰指南',
+      ],
+    );
+
+    final userMessage2 = Message.user('可以舉個 Riverpod 的例子嗎？');
+    final aiMessage2 = Message.assistant(
+      '當然！這是一個簡單的 Riverpod 範例：\n\n'
+      '```dart\n'
+      '@riverpod\n'
+      'class Counter extends _\$Counter {\n'
+      '  @override\n'
+      '  int build() => 0;\n'
+      '\n'
+      '  void increment() => state++;\n'
+      '  void decrement() => state--;\n'
+      '}\n'
+      '```\n\n'
+      '在 UI 中使用：\n\n'
+      '```dart\n'
+      'final count = ref.watch(counterProvider);\n'
+      '```\n\n'
+      '點擊訊息上方的操作列可以複製、編輯或刪除訊息！',
+      citations: [
+        'Riverpod 程式碼生成指南',
+      ],
+    );
+
+    // 組合所有訊息到會話中
+    var sessionWithMessages = demoSession
+        .addMessage(userMessage1)
+        .addMessage(aiMessage1)
+        .addMessage(userMessage2)
+        .addMessage(aiMessage2);
+
+    return [sessionWithMessages];
   }
 
   /// 建立新會話

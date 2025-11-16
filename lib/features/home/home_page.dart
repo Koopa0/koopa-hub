@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../chat/pages/chat_page.dart';
 import '../knowledge/pages/knowledge_page.dart';
 import '../settings/pages/settings_page.dart';
+import '../../core/utils/responsive.dart';
 
 part 'home_page.g.dart';
 
@@ -37,28 +38,58 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // 監聽當前選擇的頁面索引
     final selectedIndex = ref.watch(homePageIndexProvider);
+    final isMobile = Responsive.isMobile(context);
 
     return Scaffold(
-      body: Row(
-        children: [
-          // 左側：導航欄
-          _NavigationRailWidget(
-            selectedIndex: selectedIndex,
-            onDestinationSelected: (index) {
-              // 更新選擇的頁面
-              ref.read(homePageIndexProvider.notifier).setIndex(index);
-            },
-          ),
+      // 主要內容區域
+      body: isMobile
+          ? _ContentArea(selectedIndex: selectedIndex)
+          : Row(
+              children: [
+                // 左側：導航欄（桌面/平板）
+                _NavigationRailWidget(
+                  selectedIndex: selectedIndex,
+                  onDestinationSelected: (index) {
+                    ref.read(homePageIndexProvider.notifier).setIndex(index);
+                  },
+                ),
 
-          // 分隔線
-          const VerticalDivider(thickness: 1, width: 1),
+                // 分隔線
+                const VerticalDivider(thickness: 1, width: 1),
 
-          // 右側：主要內容區域
-          Expanded(
-            child: _ContentArea(selectedIndex: selectedIndex),
-          ),
-        ],
-      ),
+                // 右側：主要內容區域
+                Expanded(
+                  child: _ContentArea(selectedIndex: selectedIndex),
+                ),
+              ],
+            ),
+
+      // 底部導航欄（僅手機）
+      bottomNavigationBar: isMobile
+          ? NavigationBar(
+              selectedIndex: selectedIndex,
+              onDestinationSelected: (index) {
+                ref.read(homePageIndexProvider.notifier).setIndex(index);
+              },
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.chat_bubble_outline),
+                  selectedIcon: Icon(Icons.chat_bubble),
+                  label: '聊天',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.library_books_outlined),
+                  selectedIcon: Icon(Icons.library_books),
+                  label: '知識庫',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.settings_outlined),
+                  selectedIcon: Icon(Icons.settings),
+                  label: '設定',
+                ),
+              ],
+            )
+          : null,
     );
   }
 }
