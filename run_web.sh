@@ -6,7 +6,7 @@
 echo "🚀 Starting Koopa Hub Web Development..."
 
 # 1. 生成國際化文件（如果不存在）
-if [ ! -f "lib/l10n/app_localizations.dart" ]; then
+if [ ! -f ".dart_tool/flutter_gen/gen_l10n/app_localizations.dart" ]; then
     echo "📝 Generating localization files..."
     flutter gen-l10n
     if [ $? -ne 0 ]; then

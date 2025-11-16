@@ -9,7 +9,3 @@ targets:
         options:
           # 生成的程式碼使用 Riverpod 3.0 的新語法
           riverpod_version: 3
-
-      # 自定義 Lint 設定
-      riverpod_lint:custom_lint_builder:
-        enabled: true
