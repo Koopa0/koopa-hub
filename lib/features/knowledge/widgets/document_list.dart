@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/widgets/confirmation_dialog.dart';
 import '../providers/knowledge_provider.dart';
 import '../models/knowledge_document.dart';
 
@@ -236,31 +237,19 @@ class _DocumentCard extends ConsumerWidget {
     );
   }
 
-  void _showDeleteDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
+  Future<void> _showDeleteDialog(BuildContext context, WidgetRef ref) async {
+    final confirmed = await ConfirmationDialog.show(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('刪除文件'),
-        content: Text('確定要刪除「${document.name}」嗎？\n此操作將從知識庫中移除此文件。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () {
-              ref
-                  .read(knowledgeDocumentsProvider.notifier)
-                  .removeDocument(document.id);
-              Navigator.of(context).pop();
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('刪除'),
-          ),
-        ],
-      ),
+      title: '刪除文件',
+      message: '確定要刪除「${document.name}」嗎？\n此操作將從知識庫中移除此文件。',
+      icon: Icons.delete_outline,
+      confirmText: '刪除',
+      cancelText: '取消',
+      isDestructive: true,
     );
+
+    if (confirmed == true) {
+      ref.read(knowledgeDocumentsProvider.notifier).removeDocument(document.id);
+    }
   }
 }

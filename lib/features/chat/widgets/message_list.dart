@@ -8,6 +8,8 @@ import 'package:markdown/markdown.dart' as md;
 
 import '../providers/chat_provider.dart';
 import '../models/message.dart';
+import 'message_action_bar.dart';
+import 'source_citation.dart';
 
 /// 訊息列表
 ///
@@ -101,23 +103,75 @@ class _MessageListState extends ConsumerState<MessageList> {
 /// - 使用者訊息：右側對齊，使用主題色
 /// - AI 訊息：左側對齊，使用表面色
 /// - 系統訊息：居中顯示
-class _MessageBubble extends StatelessWidget {
+class _MessageBubble extends StatefulWidget {
   const _MessageBubble({required this.message});
 
   final Message message;
 
   @override
+  State<_MessageBubble> createState() => _MessageBubbleState();
+}
+
+class _MessageBubbleState extends State<_MessageBubble> {
+  bool _isHovered = false;
+
+  void _handleAction(MessageAction action) {
+    // TODO: 實作各個操作
+    switch (action) {
+      case MessageAction.copy:
+        // 複製功能已在 MessageActionBar 中處理
+        break;
+      case MessageAction.edit:
+        // TODO: 實作編輯功能
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('編輯功能開發中'),
+              duration: Duration(seconds: 1),
+            ),
+          );
+        }
+        break;
+      case MessageAction.regenerate:
+        // TODO: 實作重新生成功能
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('重新生成功能開發中'),
+              duration: Duration(seconds: 1),
+            ),
+          );
+        }
+        break;
+      case MessageAction.delete:
+        // TODO: 實作刪除功能
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('刪除功能開發中'),
+              duration: Duration(seconds: 1),
+            ),
+          );
+        }
+        break;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isUser = message.type == MessageType.user;
+    final isUser = widget.message.type == MessageType.user;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        mainAxisAlignment:
-            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Row(
+          mainAxisAlignment:
+              isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // AI 頭像（左側）
           if (!isUser) ...[
             _buildAvatar(context, isUser),
@@ -126,34 +180,67 @@ class _MessageBubble extends StatelessWidget {
 
           // 訊息內容
           Flexible(
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 600),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isUser
-                    ? theme.colorScheme.primaryContainer
-                    : theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Markdown 內容
-                  _buildMessageContent(context, isUser),
+            child: Column(
+              crossAxisAlignment:
+                  isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                // 操作工具列（懸停時顯示在訊息上方）
+                AnimatedOpacity(
+                  opacity: _isHovered ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: _isHovered
+                      ? Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: MessageActionBar(
+                            isUser: isUser,
+                            message: widget.message.content,
+                            onAction: _handleAction,
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
 
-                  // 引用來源（如果有）
-                  if (message.citations.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    _buildCitations(context),
-                  ],
+                // 訊息氣泡
+                Container(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isUser
+                        ? theme.colorScheme.primaryContainer
+                        : theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Markdown 內容
+                      _buildMessageContent(context, isUser),
 
-                  // 串流指示器
-                  if (message.isStreaming) ...[
-                    const SizedBox(height: 8),
-                    _buildStreamingIndicator(context),
-                  ],
-                ],
-              ),
+                      // 引用來源（如果有）- 使用新的 SourceCitation 元件
+                      if (widget.message.citations.isNotEmpty) ...[
+                        SourceCitation(
+                          sources: widget.message.citations
+                              .asMap()
+                              .entries
+                              .map((entry) => CitationSource(
+                                    title: widget.message.citations[entry.key],
+                                    snippet:
+                                        '來自：${widget.message.citations[entry.key]}',
+                                    icon: Icons.description,
+                                  ))
+                              .toList(),
+                        ),
+                      ],
+
+                      // 串流指示器
+                      if (widget.message.isStreaming) ...[
+                        const SizedBox(height: 8),
+                        _buildStreamingIndicator(context),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -163,6 +250,7 @@ class _MessageBubble extends StatelessWidget {
             _buildAvatar(context, isUser),
           ],
         ],
+      ),
       ),
     );
   }
@@ -194,7 +282,7 @@ class _MessageBubble extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return MarkdownBody(
-      data: message.content,
+      data: widget.message.content,
       selectable: true,
       styleSheet: MarkdownStyleSheet(
         p: theme.textTheme.bodyMedium?.copyWith(
@@ -215,50 +303,6 @@ class _MessageBubble extends StatelessWidget {
       builders: {
         'code': _CodeBlockBuilder(isDark: isDark),
       },
-    );
-  }
-
-  Widget _buildCitations(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Divider(),
-        Text(
-          '來源：',
-          style: theme.textTheme.labelSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 4),
-        ...message.citations.map(
-          (citation) => Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.link,
-                  size: 14,
-                  color: theme.colorScheme.primary,
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    citation,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.primary,
-                      decoration: TextDecoration.underline,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../models/chat_session.dart';
 import '../providers/chat_provider.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/widgets/confirmation_dialog.dart';
 
 /// 會話列表側邊欄
 ///
@@ -263,30 +264,20 @@ class _SessionTile extends StatelessWidget {
     );
   }
 
-  void _showDeleteDialog(BuildContext context) {
-    showDialog(
+  Future<void> _showDeleteDialog(BuildContext context) async {
+    final confirmed = await ConfirmationDialog.show(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('刪除對話'),
-        content: const Text('確定要刪除這個對話嗎？此操作無法復原。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () {
-              onDelete();
-              Navigator.of(context).pop();
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('刪除'),
-          ),
-        ],
-      ),
+      title: '刪除對話',
+      message: '確定要刪除這個對話嗎？此操作無法復原。',
+      icon: Icons.delete_outline,
+      confirmText: '刪除',
+      cancelText: '取消',
+      isDestructive: true,
     );
+
+    if (confirmed == true) {
+      onDelete();
+    }
   }
 
   /// 格式化時間顯示
