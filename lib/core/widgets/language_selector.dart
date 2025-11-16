@@ -25,6 +25,12 @@ class SupportedLanguages {
       locale: Locale('en', ''),
     ),
     SupportedLanguage(
+      code: 'zh',
+      name: 'Traditional Chinese',
+      nativeName: '繁體中文',
+      locale: Locale('zh', ''),
+    ),
+    SupportedLanguage(
       code: 'zh_TW',
       name: 'Traditional Chinese',
       nativeName: '繁體中文',

@@ -42,8 +42,9 @@ class KoopaHubApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [
-        Locale('en', ''),  // English
-        Locale('zh', 'TW'),  // Traditional Chinese
+        Locale('en', ''),    // English
+        Locale('zh', ''),    // Traditional Chinese (Taiwan)
+        Locale('zh', 'TW'),  // Traditional Chinese (Taiwan)
       ],
 
       // Material 3 主題配置
