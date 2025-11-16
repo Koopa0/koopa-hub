@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
@@ -31,6 +33,18 @@ class KoopaHubApp extends ConsumerWidget {
 
       // 除錯橫幅（生產環境會自動隱藏）
       debugShowCheckedModeBanner: false,
+
+      // 國際化支援
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', ''),  // English
+        Locale('zh', 'TW'),  // Traditional Chinese
+      ],
 
       // Material 3 主題配置
       //
