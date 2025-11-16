@@ -37,7 +37,7 @@ dependencies:
 
   # Utils
   uuid: ^4.4.0
-  intl: ^0.19.0
+  intl: ^0.20.2
   logger: ^2.3.0
 
   # Desktop Integration
