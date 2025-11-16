@@ -192,7 +192,7 @@ class Settings extends _$Settings {
 ///
 /// 從設定中提取主題模式，簡化 UI 訪問
 @riverpod
-ThemeMode currentThemeMode(CurrentThemeModeRef ref) {
+ThemeMode currentThemeMode(ref) {
   final settings = ref.watch(settingsProvider);
   return settings.when(
     data: (data) => data.themeMode,
@@ -203,7 +203,7 @@ ThemeMode currentThemeMode(CurrentThemeModeRef ref) {
 
 /// 當前選擇的模型 Provider
 @riverpod
-String currentSelectedModel(CurrentSelectedModelRef ref) {
+String currentSelectedModel(ref) {
   final settings = ref.watch(settingsProvider);
   return settings.when(
     data: (data) => data.selectedModel,

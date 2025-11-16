@@ -147,7 +147,7 @@ class KnowledgeDocuments extends _$KnowledgeDocuments {
   int indexed,
   int indexing,
   int failed,
-}) knowledgeStats(KnowledgeStatsRef ref) {
+}) knowledgeStats(ref) {
   final documents = ref.watch(knowledgeDocumentsProvider);
 
   return (
@@ -162,7 +162,7 @@ class KnowledgeDocuments extends _$KnowledgeDocuments {
 ///
 /// 只顯示可以刪除的文件（排除正在索引的）
 @riverpod
-List<KnowledgeDocument> deletableDocuments(DeletableDocumentsRef ref) {
+List<KnowledgeDocument> deletableDocuments(ref) {
   final documents = ref.watch(knowledgeDocumentsProvider);
   return documents.where((doc) => doc.canDelete).toList();
 }

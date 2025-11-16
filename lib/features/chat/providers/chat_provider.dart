@@ -169,7 +169,7 @@ class CurrentSessionId extends _$CurrentSessionId {
 /// 2. 避免重複的狀態
 /// 3. 保持資料的單一來源（single source of truth）
 @riverpod
-ChatSession? currentSession(CurrentSessionRef ref) {
+ChatSession? currentSession(ref) {
   final sessionId = ref.watch(currentSessionIdProvider);
   if (sessionId == null) return null;
 
@@ -186,7 +186,7 @@ ChatSession? currentSession(CurrentSessionRef ref) {
 /// 另一個衍生 provider
 /// 直接提供當前會話的訊息列表，簡化 UI 層的程式碼
 @riverpod
-List<Message> currentMessages(CurrentMessagesRef ref) {
+List<Message> currentMessages(ref) {
   final session = ref.watch(currentSessionProvider);
   return session?.messages ?? [];
 }
