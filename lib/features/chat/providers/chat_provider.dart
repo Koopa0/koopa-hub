@@ -29,7 +29,7 @@ class ChatSessions extends _$ChatSessions {
     // 現在先返回一個示範會話
     return [
       ChatSession.create(
-        title: '歡迎使用 Koopa Assistant',
+        title: '歡迎使用 Koopa Hub',
       ),
     ];
   }
