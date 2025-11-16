@@ -85,12 +85,12 @@ class _ChatInputState extends ConsumerState<ChatInput> {
               padding: const EdgeInsets.all(16),
             ),
             child: _isSending
-                ? const SizedBox(
+                ? SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.white,
+                      color: theme.colorScheme.onPrimary,
                     ),
                   )
                 : const Icon(Icons.send),

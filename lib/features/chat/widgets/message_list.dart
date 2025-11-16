@@ -309,6 +309,8 @@ class _MessageBubbleState extends State<_MessageBubble> {
   Widget _buildMessageContent(BuildContext context, bool isUser) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final codeBlockBg = theme.colorScheme.surfaceContainerHighest;
+    final codeHeaderBg = theme.colorScheme.surfaceContainer;
 
     return MarkdownBody(
       data: widget.message.content,
@@ -320,17 +322,21 @@ class _MessageBubbleState extends State<_MessageBubble> {
               : theme.colorScheme.onSurface,
         ),
         code: TextStyle(
-          backgroundColor: isDark ? Colors.black26 : Colors.black12,
+          backgroundColor: codeBlockBg,
           fontFamily: 'monospace',
         ),
         codeblockDecoration: BoxDecoration(
-          color: isDark ? Colors.black26 : Colors.black12,
+          color: codeBlockBg,
           borderRadius: BorderRadius.circular(8),
         ),
       ),
       // 自訂程式碼塊渲染
       builders: {
-        'code': _CodeBlockBuilder(isDark: isDark),
+        'code': _CodeBlockBuilder(
+          isDark: isDark,
+          codeBlockBg: codeBlockBg,
+          codeHeaderBg: codeHeaderBg,
+        ),
       },
     );
   }
@@ -363,9 +369,15 @@ class _MessageBubbleState extends State<_MessageBubble> {
 ///
 /// 使用 flutter_highlighter 提供語法高亮
 class _CodeBlockBuilder extends MarkdownElementBuilder {
-  _CodeBlockBuilder({required this.isDark});
+  _CodeBlockBuilder({
+    required this.isDark,
+    required this.codeBlockBg,
+    required this.codeHeaderBg,
+  });
 
   final bool isDark;
+  final Color codeBlockBg;
+  final Color codeHeaderBg;
 
   @override
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
@@ -375,7 +387,7 @@ class _CodeBlockBuilder extends MarkdownElementBuilder {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? Colors.black26 : Colors.black12,
+        color: codeBlockBg,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -385,7 +397,7 @@ class _CodeBlockBuilder extends MarkdownElementBuilder {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: isDark ? Colors.black12 : Colors.black26,
+              color: codeHeaderBg,
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(8),
               ),

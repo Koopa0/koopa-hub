@@ -248,12 +248,17 @@ class _SessionTile extends StatelessWidget {
         ),
         PopupMenuItem(
           value: 'delete',
-          child: Row(
-            children: [
-              const Icon(Icons.delete_outline, color: Colors.red),
-              const SizedBox(width: 12),
-              Text(l10n.commonDelete, style: const TextStyle(color: Colors.red)),
-            ],
+          child: Builder(
+            builder: (context) {
+              final errorColor = Theme.of(context).colorScheme.error;
+              return Row(
+                children: [
+                  Icon(Icons.delete_outline, color: errorColor),
+                  const SizedBox(width: 12),
+                  Text(l10n.commonDelete, style: TextStyle(color: errorColor)),
+                ],
+              );
+            },
           ),
         ),
       ],
