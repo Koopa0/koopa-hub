@@ -1,10 +1,10 @@
-# Koopa Assistant
+# Koopa Hub
 
-一個功能完整的跨平台（桌面端優先、支援 Web）AI 助理，基於 Flutter 3.38 和 Material 3 設計。
+一個功能完整的跨平台（桌面端優先、支援 Web）AI Hub，基於 Flutter 3.38 和 Material 3 設計。
 
 ## 專案簡介
 
-Koopa Assistant 是一個現代化的 AI 助理應用，提供：
+Koopa Hub 是一個現代化的 AI Hub 應用，提供：
 
 - **多模型聊天**：支援本地 RAG、網路搜尋和 Gemini 雲端模型
 - **知識庫管理**：文件索引、向量檢索和智能搜尋

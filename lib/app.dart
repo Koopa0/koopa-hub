@@ -6,15 +6,15 @@ import 'core/constants/app_constants.dart';
 import 'features/settings/providers/settings_provider.dart';
 import 'features/home/home_page.dart';
 
-/// Koopa Assistant 主應用
+/// Koopa Hub 主應用
 ///
 /// Flutter 3.38 最佳實踐：
 /// 1. 使用 ConsumerWidget 代替 StatelessWidget（Riverpod 3.0）
 /// 2. 全面採用 Material 3
 /// 3. 支援深色模式和動態主題
 /// 4. 使用 MaterialApp 的最新功能
-class KoopaAssistantApp extends ConsumerWidget {
-  const KoopaAssistantApp({super.key});
+class KoopaHubApp extends ConsumerWidget {
+  const KoopaHubApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

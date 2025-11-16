@@ -39,7 +39,7 @@ Future<void> main() async {
   runApp(
     // Riverpod 3.0: ProviderScope 包裹整個應用
     const ProviderScope(
-      child: KoopaAssistantApp(),
+      child: KoopaHubApp(),
     ),
   );
 }
@@ -79,7 +79,7 @@ Future<void> _initializeDesktop() async {
     center: true, // 置中顯示
     backgroundColor: Colors.transparent, // 透明背景
     skipTaskbar: false,
-    title: 'Koopa Assistant', // 視窗標題
+    title: 'Koopa Hub', // 視窗標題
     titleBarStyle: TitleBarStyle.normal,
   );
 

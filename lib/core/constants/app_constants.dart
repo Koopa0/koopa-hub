@@ -1,6 +1,6 @@
 class AppConstants {
   // App Info
-  static const String appName = 'Koopa Assistant';
+  static const String appName = 'Koopa Hub';
   static const String appVersion = '1.0.0';
 
   // Default Server Config

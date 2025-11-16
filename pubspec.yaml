@@ -1,5 +1,5 @@
-name: koopa_assistant
-description: A cross-platform AI assistant with local RAG, multi-model chat, and real-time web search.
+name: koopa_hub
+description: A cross-platform AI hub with local RAG, multi-model chat, and real-time web search.
 version: 1.0.0+1
 
 environment:
