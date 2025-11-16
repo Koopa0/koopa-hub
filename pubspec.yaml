@@ -10,7 +10,6 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  intl: any
 
   # State Management - Riverpod 3.0 (2025 最佳實踐)
   # 使用程式碼生成來減少樣板程式碼
