@@ -375,7 +375,9 @@ class _CodeBlockBuilder extends MarkdownElementBuilder {
             child: HighlightView(
               code,
               language: language,
-              theme: isDark ? themeMap['github-dark-dimmed']! : githubTheme,
+              theme: isDark
+                  ? (themeMap['github-dark-dimmed'] ?? themeMap['atom-one-dark'] ?? githubTheme)
+                  : githubTheme,
               padding: EdgeInsets.zero,
               textStyle: const TextStyle(
                 fontFamily: 'monospace',
