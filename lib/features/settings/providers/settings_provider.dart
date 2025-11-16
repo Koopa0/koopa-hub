@@ -32,85 +32,125 @@ class Settings extends _$Settings {
   /// Riverpod 會自動處理載入狀態
   @override
   Future<AppSettings> build() async {
-    // 初始化 SharedPreferences
-    _prefs = await SharedPreferences.getInstance();
+    try {
+      // 初始化 SharedPreferences
+      _prefs = await SharedPreferences.getInstance();
+    } catch (e, stackTrace) {
+      debugPrint('Failed to initialize SharedPreferences: $e');
+      debugPrint('Stack trace: $stackTrace');
+      // 返回默認設定
+      return _defaultSettings;
+    }
 
-    // 從本地儲存載入設定
-    final serverUrl = _prefs.getString(AppConstants.keyServerUrl) ??
-        AppConstants.defaultServerUrl;
+    try {
+      // 從本地儲存載入設定
+      final serverUrl = _prefs.getString(AppConstants.keyServerUrl) ??
+          AppConstants.defaultServerUrl;
 
-    final geminiApiKey = _prefs.getString(AppConstants.keyGeminiApiKey);
+      final geminiApiKey = _prefs.getString(AppConstants.keyGeminiApiKey);
 
-    final themeModeString = _prefs.getString(AppConstants.keyThemeMode) ??
-        'system';
-    final themeMode = _themeModeFromString(themeModeString);
+      final themeModeString = _prefs.getString(AppConstants.keyThemeMode) ??
+          'system';
+      final themeMode = _themeModeFromString(themeModeString);
 
-    final selectedModel = _prefs.getString(AppConstants.keySelectedModel) ??
-        AppConstants.aiModels.first;
+      final selectedModel = _prefs.getString(AppConstants.keySelectedModel) ??
+          AppConstants.aiModels.first;
 
-    return (
-      serverUrl: serverUrl,
-      geminiApiKey: geminiApiKey,
-      themeMode: themeMode,
-      selectedModel: selectedModel,
-    );
+      return (
+        serverUrl: serverUrl,
+        geminiApiKey: geminiApiKey,
+        themeMode: themeMode,
+        selectedModel: selectedModel,
+      );
+    } catch (e, stackTrace) {
+      debugPrint('Failed to read settings: $e');
+      debugPrint('Stack trace: $stackTrace');
+      // 返回默認設定
+      return _defaultSettings;
+    }
+  }
+
+  /// 默認設定
+  AppSettings get _defaultSettings => (
+        serverUrl: AppConstants.defaultServerUrl,
+        geminiApiKey: null,
+        themeMode: ThemeMode.system,
+        selectedModel: AppConstants.aiModels.first,
+      );
+
+  /// 安全地更新設定
+  ///
+  /// 使用 valueOrNull 避免在 loading/error 狀態時訪問 value
+  Future<void> _updateSettings({
+    String? serverUrl,
+    String? geminiApiKey,
+    bool removeApiKey = false,
+    ThemeMode? themeMode,
+    String? selectedModel,
+  }) async {
+    final currentValue = state.valueOrNull;
+    if (currentValue == null) {
+      debugPrint('Cannot update settings: current state is not data');
+      return;
+    }
+
+    // 更新狀態
+    state = AsyncData((
+      serverUrl: serverUrl ?? currentValue.serverUrl,
+      geminiApiKey:
+          removeApiKey ? null : (geminiApiKey ?? currentValue.geminiApiKey),
+      themeMode: themeMode ?? currentValue.themeMode,
+      selectedModel: selectedModel ?? currentValue.selectedModel,
+    ));
+
+    // 持久化到本地儲存
+    try {
+      if (serverUrl != null) {
+        await _prefs.setString(AppConstants.keyServerUrl, serverUrl);
+      }
+      if (geminiApiKey != null) {
+        await _prefs.setString(AppConstants.keyGeminiApiKey, geminiApiKey);
+      }
+      if (removeApiKey) {
+        await _prefs.remove(AppConstants.keyGeminiApiKey);
+      }
+      if (themeMode != null) {
+        await _prefs.setString(
+          AppConstants.keyThemeMode,
+          _themeModeToString(themeMode),
+        );
+      }
+      if (selectedModel != null) {
+        await _prefs.setString(AppConstants.keySelectedModel, selectedModel);
+      }
+    } catch (e, stackTrace) {
+      debugPrint('Failed to persist settings: $e');
+      debugPrint('Stack trace: $stackTrace');
+      // 狀態已更新，但持久化失敗 - 下次啟動會恢復舊值
+    }
   }
 
   /// 更新伺服器 URL
   Future<void> updateServerUrl(String url) async {
-    // 先更新 UI 狀態
-    state = AsyncData((
-      serverUrl: url,
-      geminiApiKey: state.value?.geminiApiKey,
-      themeMode: state.value?.themeMode ?? ThemeMode.system,
-      selectedModel: state.value?.selectedModel ?? AppConstants.aiModels.first,
-    ));
-
-    // 然後持久化到本地儲存
-    await _prefs.setString(AppConstants.keyServerUrl, url);
+    await _updateSettings(serverUrl: url);
   }
 
   /// 更新 Gemini API Key
   Future<void> updateGeminiApiKey(String? apiKey) async {
-    state = AsyncData((
-      serverUrl: state.value?.serverUrl ?? AppConstants.defaultServerUrl,
+    await _updateSettings(
       geminiApiKey: apiKey,
-      themeMode: state.value?.themeMode ?? ThemeMode.system,
-      selectedModel: state.value?.selectedModel ?? AppConstants.aiModels.first,
-    ));
-
-    if (apiKey != null) {
-      await _prefs.setString(AppConstants.keyGeminiApiKey, apiKey);
-    } else {
-      await _prefs.remove(AppConstants.keyGeminiApiKey);
-    }
+      removeApiKey: apiKey == null,
+    );
   }
 
   /// 更新主題模式
   Future<void> updateThemeMode(ThemeMode mode) async {
-    state = AsyncData((
-      serverUrl: state.value?.serverUrl ?? AppConstants.defaultServerUrl,
-      geminiApiKey: state.value?.geminiApiKey,
-      themeMode: mode,
-      selectedModel: state.value?.selectedModel ?? AppConstants.aiModels.first,
-    ));
-
-    await _prefs.setString(
-      AppConstants.keyThemeMode,
-      _themeModeToString(mode),
-    );
+    await _updateSettings(themeMode: mode);
   }
 
   /// 更新選擇的模型
   Future<void> updateSelectedModel(String model) async {
-    state = AsyncData((
-      serverUrl: state.value?.serverUrl ?? AppConstants.defaultServerUrl,
-      geminiApiKey: state.value?.geminiApiKey,
-      themeMode: state.value?.themeMode ?? ThemeMode.system,
-      selectedModel: model,
-    ));
-
-    await _prefs.setString(AppConstants.keySelectedModel, model);
+    await _updateSettings(selectedModel: model);
   }
 
   /// 重置所有設定
@@ -151,24 +191,26 @@ class Settings extends _$Settings {
 /// 當前主題模式 Provider
 ///
 /// 從設定中提取主題模式，簡化 UI 訪問
-final currentThemeModeProvider = Provider<ThemeMode>((ref) {
+@riverpod
+ThemeMode currentThemeMode(CurrentThemeModeRef ref) {
   final settings = ref.watch(settingsProvider);
   return settings.when(
     data: (data) => data.themeMode,
     loading: () => ThemeMode.system,
     error: (_, __) => ThemeMode.system,
   );
-});
+}
 
 /// 當前選擇的模型 Provider
-final currentSelectedModelProvider = Provider<String>((ref) {
+@riverpod
+String currentSelectedModel(CurrentSelectedModelRef ref) {
   final settings = ref.watch(settingsProvider);
   return settings.when(
     data: (data) => data.selectedModel,
     loading: () => AppConstants.aiModels.first,
     error: (_, __) => AppConstants.aiModels.first,
   );
-});
+}
 
 /// 伺服器連接狀態 Provider
 ///

@@ -64,6 +64,120 @@
   "@chatModelSelector": {
     "description": "Model selector label"
   },
+  "chatEmptyTitle": "Start Conversation",
+  "@chatEmptyTitle": {
+    "description": "Empty chat state title"
+  },
+  "chatEmptyMessage": "Type a message in the input box below to start chatting",
+  "@chatEmptyMessage": {
+    "description": "Empty chat state message"
+  },
+  "chatEditInDevelopment": "Edit feature in development",
+  "@chatEditInDevelopment": {
+    "description": "Edit feature not yet available message"
+  },
+  "chatRegenerateInDevelopment": "Regenerate feature in development",
+  "@chatRegenerateInDevelopment": {
+    "description": "Regenerate feature not yet available message"
+  },
+  "chatDeleteInDevelopment": "Delete feature in development",
+  "@chatDeleteInDevelopment": {
+    "description": "Delete feature not yet available message"
+  },
+  "chatGenerating": "Generating...",
+  "@chatGenerating": {
+    "description": "AI message generation indicator"
+  },
+  "chatCitationFrom": "From: {source}",
+  "@chatCitationFrom": {
+    "description": "Citation source prefix",
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "chatDemoQuestion1": "What is Flutter state management?",
+  "@chatDemoQuestion1": {
+    "description": "Demo question 1"
+  },
+  "chatDemoAnswer1": "Flutter provides multiple state management solutions, including:\n\n1. **Provider** - Google's official recommended state management solution\n2. **Riverpod** - An improved version of Provider with better type safety\n3. **Bloc** - Event-driven state management\n4. **GetX** - Lightweight state management and routing solution\n\nIn this project, we use **Riverpod 3.0** with code generation, providing type safety and a cleaner API.",
+  "@chatDemoAnswer1": {
+    "description": "Demo answer 1"
+  },
+  "chatDemoQuestion2": "Can you give an example of Riverpod?",
+  "@chatDemoQuestion2": {
+    "description": "Demo question 2"
+  },
+  "chatDemoAnswer2": "Of course! Here's a simple Riverpod example:\n\n```dart\n@riverpod\nclass Counter extends _$Counter {\n  @override\n  int build() => 0;\n\n  void increment() => state++;\n  void decrement() => state--;\n}\n```\n\nUsing in UI:\n\n```dart\nfinal count = ref.watch(counterProvider);\n```\n\nClick the action bar above the message to copy, edit, or delete messages!",
+  "@chatDemoAnswer2": {
+    "description": "Demo answer 2"
+  },
+  "chatMockResponse": "This is a mock response. Real API integration will be implemented after the backend is completed.",
+  "@chatMockResponse": {
+    "description": "Mock API response message"
+  },
+  "chatSendFailed": "❌ Send Failed",
+  "@chatSendFailed": {
+    "description": "Message send failed title"
+  },
+  "chatErrorOccurred": "An error occurred, please try again later.",
+  "@chatErrorOccurred": {
+    "description": "Error occurred message"
+  },
+  "chatErrorDetails": "Error details: {error}",
+  "@chatErrorDetails": {
+    "description": "Error details with error parameter",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "chatDemoCitation1": "Flutter Official Documentation - State Management",
+  "@chatDemoCitation1": {
+    "description": "Demo citation 1"
+  },
+  "chatDemoCitation2": "Riverpod Documentation",
+  "@chatDemoCitation2": {
+    "description": "Demo citation 2"
+  },
+  "chatDemoCitation3": "Flutter in Action Guide",
+  "@chatDemoCitation3": {
+    "description": "Demo citation 3"
+  },
+  "chatDemoCitation4": "Riverpod Code Generation Guide",
+  "@chatDemoCitation4": {
+    "description": "Demo citation 4"
+  },
+  "chatNewConversation": "New Chat",
+  "@chatNewConversation": {
+    "description": "New conversation button"
+  },
+  "chatNoConversations": "No conversations yet\nClick the button above to start",
+  "@chatNoConversations": {
+    "description": "Empty conversation list message"
+  },
+  "chatPin": "Pin",
+  "@chatPin": {
+    "description": "Pin conversation action"
+  },
+  "chatUnpin": "Unpin",
+  "@chatUnpin": {
+    "description": "Unpin conversation action"
+  },
+  "chatDeleteConversation": "Delete Conversation",
+  "@chatDeleteConversation": {
+    "description": "Delete conversation dialog title"
+  },
+  "chatDeleteConversationMessage": "Are you sure you want to delete this conversation? This action cannot be undone.",
+  "@chatDeleteConversationMessage": {
+    "description": "Delete conversation confirmation message"
+  },
+  "commonYesterday": "Yesterday",
+  "@commonYesterday": {
+    "description": "Yesterday label for relative dates"
+  },
 
   "knowledgeTitle": "Knowledge Base",
   "@knowledgeTitle": {
@@ -128,6 +242,23 @@
   "knowledgeEmptyMessage": "Click the button above to add documents or folders",
   "@knowledgeEmptyMessage": {
     "description": "Empty state message"
+  },
+  "knowledgeFilesAdded": "Added {count} files to knowledge base",
+  "@knowledgeFilesAdded": {
+    "description": "Success message after adding files",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "knowledgeFolderAdded": "Folder added to indexing queue",
+  "@knowledgeFolderAdded": {
+    "description": "Success message after adding folder"
+  },
+  "commonView": "View",
+  "@commonView": {
+    "description": "View action button"
   },
 
   "settingsTitle": "Settings",

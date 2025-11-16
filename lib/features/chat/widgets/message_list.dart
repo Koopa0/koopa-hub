@@ -5,7 +5,9 @@ import 'package:flutter_highlighter/flutter_highlighter.dart';
 import 'package:flutter_highlighter/themes/github.dart';
 import 'package:flutter_highlighter/theme_map.dart';
 import 'package:markdown/markdown.dart' as md;
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import '../../../core/constants/design_tokens.dart';
 import '../providers/chat_provider.dart';
 import '../models/message.dart';
 import 'message_action_bar.dart';
@@ -28,6 +30,7 @@ class MessageList extends ConsumerStatefulWidget {
 
 class _MessageListState extends ConsumerState<MessageList> {
   final ScrollController _scrollController = ScrollController();
+  List<Message> _previousMessages = [];
 
   @override
   void dispose() {
@@ -36,19 +39,34 @@ class _MessageListState extends ConsumerState<MessageList> {
   }
 
   @override
+  void didUpdateWidget(MessageList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // 只在訊息數量變化時滾動 - 避免在每次 build 時都添加 callback
+    final messages = ref.read(currentMessagesProvider);
+    if (messages.length != _previousMessages.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToBottom();
+      });
+      _previousMessages = List.from(messages);
+    }
+  }
+
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final messages = ref.watch(currentMessagesProvider);
 
-    // 當訊息列表更新時，自動滾動到底部
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
+    // build 方法應該保持純粹 - 不應有副作用
 
     if (messages.isEmpty) {
       return _buildEmptyState(context);
@@ -56,17 +74,21 @@ class _MessageListState extends ConsumerState<MessageList> {
 
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.all(16),
+      padding: DesignTokens.paddingAll16,
       itemCount: messages.length,
       itemBuilder: (context, index) {
         final message = messages[index];
-        return _MessageBubble(message: message);
+        return _MessageBubble(
+          key: ValueKey(message.id), // 添加 key 以提升性能和穩定性
+          message: message,
+        );
       },
     );
   }
 
   Widget _buildEmptyState(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Center(
       child: Column(
@@ -74,19 +96,19 @@ class _MessageListState extends ConsumerState<MessageList> {
         children: [
           Icon(
             Icons.chat,
-            size: 64,
+            size: DesignTokens.iconSize3xl,
             color: theme.colorScheme.outlineVariant,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: DesignTokens.space16),
           Text(
-            '開始對話',
+            l10n.chatEmptyTitle,
             style: theme.textTheme.titleMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: DesignTokens.space8),
           Text(
-            '在下方輸入框輸入訊息開始聊天',
+            l10n.chatEmptyMessage,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -116,6 +138,8 @@ class _MessageBubbleState extends State<_MessageBubble> {
   bool _isHovered = false;
 
   void _handleAction(MessageAction action) {
+    final l10n = AppLocalizations.of(context)!;
+
     // TODO: 實作各個操作
     switch (action) {
       case MessageAction.copy:
@@ -125,9 +149,9 @@ class _MessageBubbleState extends State<_MessageBubble> {
         // TODO: 實作編輯功能
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('編輯功能開發中'),
-              duration: Duration(seconds: 1),
+            SnackBar(
+              content: Text(l10n.chatEditInDevelopment),
+              duration: const Duration(seconds: 1),
             ),
           );
         }
@@ -136,9 +160,9 @@ class _MessageBubbleState extends State<_MessageBubble> {
         // TODO: 實作重新生成功能
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('重新生成功能開發中'),
-              duration: Duration(seconds: 1),
+            SnackBar(
+              content: Text(l10n.chatRegenerateInDevelopment),
+              duration: const Duration(seconds: 1),
             ),
           );
         }
@@ -147,9 +171,9 @@ class _MessageBubbleState extends State<_MessageBubble> {
         // TODO: 實作刪除功能
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('刪除功能開發中'),
-              duration: Duration(seconds: 1),
+            SnackBar(
+              content: Text(l10n.chatDeleteInDevelopment),
+              duration: const Duration(seconds: 1),
             ),
           );
         }
@@ -166,7 +190,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.only(bottom: DesignTokens.space16),
         child: Row(
           mainAxisAlignment:
               isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
@@ -210,34 +234,39 @@ class _MessageBubbleState extends State<_MessageBubble> {
                         : theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Markdown 內容
-                      _buildMessageContent(context, isUser),
+                  child: Builder(
+                    builder: (context) {
+                      final l10n = AppLocalizations.of(context)!;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Markdown 內容
+                          _buildMessageContent(context, isUser),
 
-                      // 引用來源（如果有）- 使用新的 SourceCitation 元件
-                      if (widget.message.citations.isNotEmpty) ...[
-                        SourceCitation(
-                          sources: widget.message.citations
-                              .asMap()
-                              .entries
-                              .map((entry) => CitationSource(
-                                    title: widget.message.citations[entry.key],
-                                    snippet:
-                                        '來自：${widget.message.citations[entry.key]}',
-                                    icon: Icons.description,
-                                  ))
-                              .toList(),
-                        ),
-                      ],
+                          // 引用來源（如果有）- 使用新的 SourceCitation 元件
+                          if (widget.message.citations.isNotEmpty) ...[
+                            SourceCitation(
+                              sources: widget.message.citations
+                                  .asMap()
+                                  .entries
+                                  .map((entry) => CitationSource(
+                                        title: widget.message.citations[entry.key],
+                                        snippet: l10n.chatCitationFrom(
+                                            widget.message.citations[entry.key]),
+                                        icon: Icons.description,
+                                      ))
+                                  .toList(),
+                            ),
+                          ],
 
-                      // 串流指示器
-                      if (widget.message.isStreaming) ...[
-                        const SizedBox(height: 8),
-                        _buildStreamingIndicator(context),
-                      ],
-                    ],
+                          // 串流指示器
+                          if (widget.message.isStreaming) ...[
+                            const SizedBox(height: 8),
+                            _buildStreamingIndicator(context),
+                          ],
+                        ],
+                      );
+                    },
                   ),
                 ),
               ],
@@ -307,6 +336,8 @@ class _MessageBubbleState extends State<_MessageBubble> {
   }
 
   Widget _buildStreamingIndicator(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -320,7 +351,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
         ),
         const SizedBox(width: 8),
         Text(
-          '正在生成...',
+          l10n.chatGenerating,
           style: Theme.of(context).textTheme.labelSmall,
         ),
       ],
@@ -375,7 +406,9 @@ class _CodeBlockBuilder extends MarkdownElementBuilder {
             child: HighlightView(
               code,
               language: language,
-              theme: isDark ? themeMap['github-dark-dimmed']! : githubTheme,
+              theme: isDark
+                  ? (themeMap['github-dark-dimmed'] ?? themeMap['atom-one-dark'] ?? githubTheme)
+                  : githubTheme,
               padding: EdgeInsets.zero,
               textStyle: const TextStyle(
                 fontFamily: 'monospace',

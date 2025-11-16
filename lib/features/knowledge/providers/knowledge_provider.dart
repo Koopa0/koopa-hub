@@ -141,12 +141,13 @@ class KnowledgeDocuments extends _$KnowledgeDocuments {
 /// 知識庫統計資訊 Provider
 ///
 /// 衍生 provider，提供統計資訊
-final knowledgeStatsProvider = Provider<({
+@riverpod
+({
   int total,
   int indexed,
   int indexing,
   int failed,
-})>((ref) {
+}) knowledgeStats(KnowledgeStatsRef ref) {
   final documents = ref.watch(knowledgeDocumentsProvider);
 
   return (
@@ -155,12 +156,13 @@ final knowledgeStatsProvider = Provider<({
     indexing: documents.where((d) => d.status == DocumentStatus.indexing).length,
     failed: documents.where((d) => d.status == DocumentStatus.failed).length,
   );
-});
+}
 
 /// 可刪除的文件列表 Provider
 ///
 /// 只顯示可以刪除的文件（排除正在索引的）
-final deletableDocumentsProvider = Provider<List<KnowledgeDocument>>((ref) {
+@riverpod
+List<KnowledgeDocument> deletableDocuments(DeletableDocumentsRef ref) {
   final documents = ref.watch(knowledgeDocumentsProvider);
   return documents.where((doc) => doc.canDelete).toList();
-});
+}
