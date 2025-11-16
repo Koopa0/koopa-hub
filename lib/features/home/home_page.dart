@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../chat/pages/chat_page.dart';
 import '../knowledge/pages/knowledge_page.dart';
 import '../settings/pages/settings_page.dart';
 
+part 'home_page.g.dart';
+
 /// 首頁選擇的索引 Provider
 ///
-/// 使用 StateProvider 管理簡單的狀態
+/// 使用 Riverpod 3.0 code generation 管理簡單的狀態
 /// 當前選擇的頁面索引：0=聊天, 1=知識庫, 2=設定
-final homePageIndexProvider = StateProvider<int>((ref) => 0);
+@riverpod
+class HomePageIndex extends _$HomePageIndex {
+  @override
+  int build() => 0;
+
+  void setIndex(int index) => state = index;
+}
 
 /// 應用首頁
 ///
@@ -37,7 +46,7 @@ class HomePage extends ConsumerWidget {
             selectedIndex: selectedIndex,
             onDestinationSelected: (index) {
               // 更新選擇的頁面
-              ref.read(homePageIndexProvider.notifier).state = index;
+              ref.read(homePageIndexProvider.notifier).setIndex(index);
             },
           ),
 
