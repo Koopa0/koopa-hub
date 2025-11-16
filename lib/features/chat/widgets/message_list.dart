@@ -126,7 +126,7 @@ class _MessageListState extends ConsumerState<MessageList> {
 /// - AI 訊息：左側對齊，使用表面色
 /// - 系統訊息：居中顯示
 class _MessageBubble extends StatefulWidget {
-  const _MessageBubble({required this.message});
+  const _MessageBubble({super.key, required this.message});
 
   final Message message;
 
