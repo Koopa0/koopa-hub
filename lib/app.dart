@@ -43,6 +43,7 @@ class KoopaHubApp extends ConsumerWidget {
       ],
       supportedLocales: const [
         Locale('en', ''),    // English
+        Locale('zh', ''),    // Traditional Chinese (Taiwan) - fallback
         Locale('zh', 'TW'),  // Traditional Chinese (Taiwan)
       ],
 
