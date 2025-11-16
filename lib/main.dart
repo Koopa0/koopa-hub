@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 import 'dart:ui' show PlatformDispatcher;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -114,6 +115,8 @@ void _setupErrorHandling() {
 /// 輔助方法：檢查是否為桌面平台
 ///
 /// Dart 3.10: 使用 getter 而不是方法讓程式碼更簡潔
+/// Web 平台不支援 Platform API，所以先檢查是否為 Web
 bool get _isDesktop {
+  if (kIsWeb) return false;
   return Platform.isWindows || Platform.isMacOS || Platform.isLinux;
 }
