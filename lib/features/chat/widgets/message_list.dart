@@ -5,7 +5,6 @@ import 'package:flutter_highlighter/flutter_highlighter.dart';
 import 'package:flutter_highlighter/themes/github.dart';
 import 'package:flutter_highlighter/theme_map.dart';
 import 'package:markdown/markdown.dart' as md;
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../../core/constants/design_tokens.dart';
 import '../providers/chat_provider.dart';
@@ -88,7 +87,6 @@ class _MessageListState extends ConsumerState<MessageList> {
 
   Widget _buildEmptyState(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
 
     return Center(
       child: Column(
@@ -101,14 +99,14 @@ class _MessageListState extends ConsumerState<MessageList> {
           ),
           const SizedBox(height: DesignTokens.space16),
           Text(
-            l10n.chatEmptyTitle,
+            '開始對話',
             style: theme.textTheme.titleMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: DesignTokens.space8),
           Text(
-            l10n.chatEmptyMessage,
+            '在下方輸入框輸入訊息開始聊天',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -138,8 +136,6 @@ class _MessageBubbleState extends State<_MessageBubble> {
   bool _isHovered = false;
 
   void _handleAction(MessageAction action) {
-    final l10n = AppLocalizations.of(context)!;
-
     // TODO: 實作各個操作
     switch (action) {
       case MessageAction.copy:
@@ -149,9 +145,9 @@ class _MessageBubbleState extends State<_MessageBubble> {
         // TODO: 實作編輯功能
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(l10n.chatEditInDevelopment),
-              duration: const Duration(seconds: 1),
+            const SnackBar(
+              content: Text('編輯功能開發中'),
+              duration: Duration(seconds: 1),
             ),
           );
         }
@@ -160,9 +156,9 @@ class _MessageBubbleState extends State<_MessageBubble> {
         // TODO: 實作重新生成功能
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(l10n.chatRegenerateInDevelopment),
-              duration: const Duration(seconds: 1),
+            const SnackBar(
+              content: Text('重新生成功能開發中'),
+              duration: Duration(seconds: 1),
             ),
           );
         }
@@ -171,9 +167,9 @@ class _MessageBubbleState extends State<_MessageBubble> {
         // TODO: 實作刪除功能
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(l10n.chatDeleteInDevelopment),
-              duration: const Duration(seconds: 1),
+            const SnackBar(
+              content: Text('刪除功能開發中'),
+              duration: Duration(seconds: 1),
             ),
           );
         }
@@ -234,39 +230,33 @@ class _MessageBubbleState extends State<_MessageBubble> {
                         : theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Builder(
-                    builder: (context) {
-                      final l10n = AppLocalizations.of(context)!;
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Markdown 內容
-                          _buildMessageContent(context, isUser),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Markdown 內容
+                      _buildMessageContent(context, isUser),
 
-                          // 引用來源（如果有）- 使用新的 SourceCitation 元件
-                          if (widget.message.citations.isNotEmpty) ...[
-                            SourceCitation(
-                              sources: widget.message.citations
-                                  .asMap()
-                                  .entries
-                                  .map((entry) => CitationSource(
-                                        title: widget.message.citations[entry.key],
-                                        snippet: l10n.chatCitationFrom(
-                                            widget.message.citations[entry.key]),
-                                        icon: Icons.description,
-                                      ))
-                                  .toList(),
-                            ),
-                          ],
+                      // 引用來源（如果有）- 使用新的 SourceCitation 元件
+                      if (widget.message.citations.isNotEmpty) ...[
+                        SourceCitation(
+                          sources: widget.message.citations
+                              .asMap()
+                              .entries
+                              .map((entry) => CitationSource(
+                                    title: widget.message.citations[entry.key],
+                                    snippet: '來自：${widget.message.citations[entry.key]}',
+                                    icon: Icons.description,
+                                  ))
+                              .toList(),
+                        ),
+                      ],
 
-                          // 串流指示器
-                          if (widget.message.isStreaming) ...[
-                            const SizedBox(height: 8),
-                            _buildStreamingIndicator(context),
-                          ],
-                        ],
-                      );
-                    },
+                      // 串流指示器
+                      if (widget.message.isStreaming) ...[
+                        const SizedBox(height: 8),
+                        _buildStreamingIndicator(context),
+                      ],
+                    ],
                   ),
                 ),
               ],
@@ -342,8 +332,6 @@ class _MessageBubbleState extends State<_MessageBubble> {
   }
 
   Widget _buildStreamingIndicator(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -357,7 +345,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
         ),
         const SizedBox(width: 8),
         Text(
-          l10n.chatGenerating,
+          '正在生成...',
           style: Theme.of(context).textTheme.labelSmall,
         ),
       ],
