@@ -36,6 +36,13 @@
   "chatDemoCitation2": "Riverpod 文件",
   "chatDemoCitation3": "Flutter 實戰指南",
   "chatDemoCitation4": "Riverpod 程式碼生成指南",
+  "chatNewConversation": "新對話",
+  "chatNoConversations": "還沒有任何對話\n點擊上方按鈕開始",
+  "chatPin": "置頂",
+  "chatUnpin": "取消置頂",
+  "chatDeleteConversation": "刪除對話",
+  "chatDeleteConversationMessage": "確定要刪除這個對話嗎？此操作無法復原。",
+  "commonYesterday": "昨天",
 
   "knowledgeTitle": "知識庫",
   "knowledgeAddFiles": "新增檔案",
@@ -53,6 +60,9 @@
   "knowledgeStatusFailed": "失敗",
   "knowledgeEmptyTitle": "尚無文件",
   "knowledgeEmptyMessage": "點擊上方按鈕以新增文件或資料夾",
+  "knowledgeFilesAdded": "已新增 {count} 個檔案到知識庫",
+  "knowledgeFolderAdded": "資料夾已新增到索引佇列",
+  "commonView": "查看",
 
   "settingsTitle": "設定",
   "settingsServer": "伺服器設定",
