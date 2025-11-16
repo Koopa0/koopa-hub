@@ -75,18 +75,18 @@ class AppPreferences extends _$AppPreferences {
 
 /// 當前訊息顯示模式
 @riverpod
-MessageDisplayMode currentMessageDisplayMode(CurrentMessageDisplayModeRef ref) {
+MessageDisplayMode currentMessageDisplayMode(Ref ref) {
   return ref.watch(appPreferencesProvider).messageDisplayMode;
 }
 
 /// 當前字體大小
 @riverpod
-FontSize currentFontSize(CurrentFontSizeRef ref) {
+FontSize currentFontSize(Ref ref) {
   return ref.watch(appPreferencesProvider).fontSize;
 }
 
 /// 當前語言設定
 @riverpod
-Locale currentLocale(CurrentLocaleRef ref) {
+Locale currentLocale(Ref ref) {
   return ref.watch(appPreferencesProvider).locale;
 }
