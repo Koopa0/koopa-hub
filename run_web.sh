@@ -5,16 +5,14 @@
 
 echo "🚀 Starting Koopa Hub Web Development..."
 
-# 1. 生成國際化文件（如果不存在）
-if [ ! -f ".dart_tool/flutter_gen/gen_l10n/app_localizations.dart" ]; then
-    echo "📝 Generating localization files..."
-    flutter gen-l10n
-    if [ $? -ne 0 ]; then
-        echo "❌ Failed to generate localization files"
-        exit 1
-    fi
-    echo "✅ Localization files generated"
+# 1. 生成國際化文件
+echo "📝 Generating localization files..."
+flutter gen-l10n
+if [ $? -ne 0 ]; then
+    echo "❌ Failed to generate localization files"
+    exit 1
 fi
+echo "✅ Localization files generated"
 
 # 2. 生成 Riverpod 程式碼（如果需要）
 echo "🔨 Generating Riverpod code..."
