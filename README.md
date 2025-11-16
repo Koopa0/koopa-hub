@@ -57,7 +57,29 @@ dart run build_runner watch --delete-conflicting-outputs
 ```
 
 4. **運行應用**
+
+**推薦方式（使用啟動腳本）：**
 ```bash
+# macOS / Linux
+./run_web.sh
+
+# Windows
+run_web.bat
+```
+
+這個腳本會自動：
+- 生成國際化文件（第一次運行時）
+- 生成 Riverpod 程式碼
+- 啟動應用在 Chrome
+
+**手動運行：**
+```bash
+# 第一次運行需要先生成 l10n 文件
+flutter gen-l10n
+
+# 生成 Riverpod 程式碼
+dart run build_runner build --delete-conflicting-outputs
+
 # 桌面端
 flutter run -d windows  # Windows
 flutter run -d macos    # macOS
