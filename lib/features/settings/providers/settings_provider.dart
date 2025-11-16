@@ -80,7 +80,7 @@ class Settings extends _$Settings {
 
   /// 安全地更新設定
   ///
-  /// 使用 valueOrNull 避免在 loading/error 狀態時訪問 value
+  /// 使用 hasValue 避免在 loading/error 狀態時訪問 value
   Future<void> _updateSettings({
     String? serverUrl,
     String? geminiApiKey,
@@ -88,11 +88,11 @@ class Settings extends _$Settings {
     ThemeMode? themeMode,
     String? selectedModel,
   }) async {
-    final currentValue = state.valueOrNull;
-    if (currentValue == null) {
+    if (!state.hasValue) {
       debugPrint('Cannot update settings: current state is not data');
       return;
     }
+    final currentValue = state.requireValue;
 
     // 更新狀態
     state = AsyncData((
