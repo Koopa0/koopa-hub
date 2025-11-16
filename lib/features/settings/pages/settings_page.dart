@@ -193,22 +193,26 @@ class _ServerSettingsState extends ConsumerState<_ServerSettings> {
             ),
             const SizedBox(width: 12),
             serverStatus.when(
-              data: (isConnected) => Row(
-                children: [
-                  Icon(
-                    isConnected ? Icons.check_circle : Icons.error,
-                    color: isConnected ? Colors.green : Colors.red,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    isConnected ? '連接成功' : '連接失敗',
-                    style: TextStyle(
-                      color: isConnected ? Colors.green : Colors.red,
+              data: (isConnected) {
+                final statusColor = isConnected
+                    ? Theme.of(context).colorScheme.tertiary
+                    : Theme.of(context).colorScheme.error;
+
+                return Row(
+                  children: [
+                    Icon(
+                      isConnected ? Icons.check_circle : Icons.error,
+                      color: statusColor,
+                      size: 20,
                     ),
-                  ),
-                ],
-              ),
+                    const SizedBox(width: 8),
+                    Text(
+                      isConnected ? '連接成功' : '連接失敗',
+                      style: TextStyle(color: statusColor),
+                    ),
+                  ],
+                );
+              },
               loading: () => const CircularProgressIndicator(),
               error: (_, __) => const Text('檢查失敗'),
             ),
