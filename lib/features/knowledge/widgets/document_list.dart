@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/widgets/confirmation_dialog.dart';
 import '../providers/knowledge_provider.dart';
 import '../models/knowledge_document.dart';
 
@@ -412,5 +413,9 @@ class _DocumentCard extends ConsumerWidget {
         ],
       ),
     );
+
+    if (confirmed == true) {
+      ref.read(knowledgeDocumentsProvider.notifier).removeDocument(document.id);
+    }
   }
 }

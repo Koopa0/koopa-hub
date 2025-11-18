@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../core/constants/app_constants.dart';
 import 'dashboard_view.dart';
 import '../chat/pages/chat_page.dart';
 import '../knowledge/pages/knowledge_page.dart';
 import '../settings/pages/settings_page.dart';
+import '../../core/utils/responsive.dart';
+
+part 'home_page.g.dart';
 
 /// Current app mode provider
 final appModeProvider = StateProvider<String>((ref) => AppConstants.modeHome);

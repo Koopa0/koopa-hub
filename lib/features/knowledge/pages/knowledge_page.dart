@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import '../providers/knowledge_provider.dart';
 import '../widgets/document_list.dart';
 import '../widgets/knowledge_stats.dart';
+import '../../../core/widgets/empty_state.dart';
 
 /// Knowledge Base Management Page - Document indexing and RAG
 ///

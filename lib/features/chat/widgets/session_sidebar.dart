@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../models/chat_session.dart';
 import '../providers/chat_provider.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/widgets/confirmation_dialog.dart';
 
 /// Session List Sidebar - Conversation history navigation
 ///
@@ -131,8 +132,8 @@ class SessionSidebar extends ConsumerWidget {
                         ///
                         /// Using .notifier.state for StateProvider updates
                         onTap: () {
-                          ref.read(currentSessionIdProvider.notifier).state =
-                              session.id;
+                          ref.read(currentSessionIdProvider.notifier)
+                              .setSessionId(session.id);
                         },
 
                         // Delete session callback
@@ -555,6 +556,10 @@ class _SessionTile extends StatelessWidget {
         ],
       ),
     );
+
+    if (confirmed == true) {
+      onDelete();
+    }
   }
 
   /// Format timestamp for display

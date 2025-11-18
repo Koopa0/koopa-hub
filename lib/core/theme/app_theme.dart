@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Primary Colors
-  static const Color primaryColor = Color(0xFF6750A4);
-  static const Color secondaryColor = Color(0xFF625B71);
-  static const Color tertiaryColor = Color(0xFF7D5260);
+  // Primary Colors - Blue Theme
+  static const Color primaryColor = Color(0xFF1976D2);  // Material Blue 700
+  static const Color secondaryColor = Color(0xFF1565C0);  // Material Blue 800
+  static const Color tertiaryColor = Color(0xFF039BE5);  // Material Light Blue 600
 
   // Light Theme
   static ThemeData lightTheme = ThemeData(
@@ -16,7 +16,7 @@ class AppTheme {
     ),
 
     // Card Theme
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -94,7 +94,7 @@ class AppTheme {
     ),
 
     // Card Theme
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
