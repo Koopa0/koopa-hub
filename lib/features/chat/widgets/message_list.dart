@@ -314,7 +314,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isUser = message.type == MessageType.user;
+    final isUser = widget.message.type == MessageType.user;
 
     return Padding(
       // Bottom padding creates spacing between messages
@@ -400,7 +400,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
                   /// - Builds trust in AI responses
                   /// - Allows users to verify information
                   /// - Meets transparency requirements
-                  if (message.citations.isNotEmpty) ...[
+                  if (widget.message.citations.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     _buildCitations(context),
                   ],
@@ -413,7 +413,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
                   /// **UX Benefit:**
                   /// Shows system is working, not frozen
                   /// Manages user expectations for response time
-                  if (message.isStreaming) ...[
+                  if (widget.message.isStreaming) ...[
                     const SizedBox(height: 8),
                     _buildStreamingIndicator(context),
                   ],
@@ -511,7 +511,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
 
     return MarkdownBody(
       // Message text content
-      data: message.content,
+      data: widget.message.content,
 
       /// Selectable Text
       ///
@@ -610,7 +610,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
         ///
         /// **Pattern:**
         /// Each citation becomes a Row with icon + text
-        ...message.citations.map(
+        ...widget.message.citations.map(
           (citation) => Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Row(
