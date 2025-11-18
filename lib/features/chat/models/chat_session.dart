@@ -1,16 +1,16 @@
 import 'package:uuid/uuid.dart';
 import 'message.dart';
 
-/// AI 模型類型枚舉
+/// AI Model Type Enum
 ///
-/// 根據設計文件定義三種模式：
-/// - 本地 RAG：使用本地 pgvector 資料庫
-/// - 網路搜尋：使用 httpGet 工具進行即時網路搜尋
-/// - Gemini 雲端：直接呼叫 Gemini API
+/// Three modes based on design:
+/// - Local RAG: Use local pgvector database
+/// - Web Search: Use httpGet tool for real-time web search
+/// - Gemini Cloud: Direct Gemini API calls
 enum AIModel {
-  localRag('Koopa (本地 RAG)'),
-  webSearch('Koopa (網路搜尋)'),
-  gemini('Gemini (雲端)');
+  localRag('Koopa (Local RAG)'),
+  webSearch('Koopa (Web Search)'),
+  gemini('Gemini (Cloud)');
 
   const AIModel(this.displayName);
   final String displayName;
@@ -64,14 +64,14 @@ class ChatSession {
     this.isPinned = false,
   });
 
-  /// 工廠建構子：建立新會話
+  /// Factory constructor: Create new session
   ///
-  /// 使用預設值簡化物件建立：
-  /// - title 預設為「新對話」
-  /// - messages 預設為空列表
-  /// - selectedModel 預設為本地 RAG
+  /// Default values:
+  /// - title defaults to "New Chat"
+  /// - messages defaults to empty list
+  /// - selectedModel defaults to local RAG
   factory ChatSession.create({
-    String title = '新對話',
+    String title = 'New Chat',
     AIModel selectedModel = AIModel.localRag,
   }) {
     final now = DateTime.now();
@@ -158,12 +158,12 @@ class ChatSession {
     );
   }
 
-  /// Getter：獲取最後一條訊息的預覽
+  /// Getter: Get last message preview
   ///
-  /// 用於會話列表顯示
-  /// 使用 ?? 運算子提供預設值
+  /// Used for session list display
+  /// Uses ?? operator for default value
   String get lastMessagePreview {
-    if (messages.isEmpty) return '開始新對話...';
+    if (messages.isEmpty) return 'Start a conversation...';
 
     final lastMessage = messages.last;
     final preview = lastMessage.content.replaceAll('\n', ' ');

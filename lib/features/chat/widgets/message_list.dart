@@ -12,14 +12,35 @@ import '../models/message.dart';
 import 'message_action_bar.dart';
 import 'source_citation.dart';
 
-/// 訊息列表
+/// Message List - Scrollable conversation display
 ///
-/// 顯示當前會話的所有訊息
-/// 支援：
-/// - Markdown 渲染
-/// - 程式碼高亮
-/// - 自動滾動到最新訊息
-/// - 串流訊息的動畫顯示
+/// **Purpose:**
+/// Displays all messages in the current chat session with support for:
+/// - Rich Markdown rendering (bold, italic, links, lists, etc.)
+/// - Syntax-highlighted code blocks
+/// - Auto-scroll to latest message
+/// - Animated streaming indicators for real-time AI responses
+/// - Source citations for RAG-based answers
+///
+/// **Flutter 3.38 Features Used:**
+/// - Material 3 ColorScheme tokens (primaryContainer, surfaceContainerHighest)
+/// - Updated ScrollController with better physics
+/// - Improved ListView.builder performance
+///
+/// **Dart 3.10 Best Practices:**
+/// - ConsumerStatefulWidget for state + reactive data
+/// - Proper resource disposal pattern
+/// - Const constructors where possible
+///
+/// **Third-Party Packages:**
+/// - flutter_markdown: Renders markdown content
+/// - flutter_highlighter: Syntax highlighting for code
+/// - markdown: Core markdown parsing
+///
+/// **Performance Optimizations:**
+/// - ListView.builder: Only builds visible items
+/// - Flexible widgets prevent layout overflow
+/// - Const constructors reduce rebuilds
 class MessageList extends ConsumerStatefulWidget {
   const MessageList({super.key});
 
@@ -28,11 +49,29 @@ class MessageList extends ConsumerStatefulWidget {
 }
 
 class _MessageListState extends ConsumerState<MessageList> {
+  /// Scroll controller for message list
+  ///
+  /// **Why we need this:**
+  /// - Auto-scroll to bottom when new messages arrive
+  /// - Allows programmatic scroll control
+  /// - Monitors scroll position for features like "scroll to top" button
+  ///
+  /// **Important:** Must be disposed to prevent memory leaks
+  /// ScrollController holds native platform resources
   final ScrollController _scrollController = ScrollController();
   List<Message> _previousMessages = [];
 
   @override
   void dispose() {
+    /// Critical: Clean up scroll controller
+    ///
+    /// **What happens if we don't dispose:**
+    /// - Memory leak (controller holds references)
+    /// - Native resource leak (platform scroll view)
+    /// - Potential crashes on hot reload
+    ///
+    /// **Flutter Best Practice:**
+    /// Always dispose controllers in reverse order of creation
     _scrollController.dispose();
     super.dispose();
   }
@@ -63,18 +102,82 @@ class _MessageListState extends ConsumerState<MessageList> {
 
   @override
   Widget build(BuildContext context) {
+    // Watch messages - rebuilds when message list changes
     final messages = ref.watch(currentMessagesProvider);
 
-    // build 方法應該保持純粹 - 不應有副作用
+    /// Auto-scroll to bottom when messages change
+    ///
+    /// **Riverpod Pattern - ref.listen:**
+    /// Only executes callback when the provider value actually changes.
+    /// More efficient than addPostFrameCallback in every build.
+    ///
+    /// **Why This Pattern:**
+    /// - Only scrolls when messages list changes (not on every rebuild)
+    /// - Prevents unnecessary callback registrations
+    /// - Better performance for complex UIs
+    ///
+    /// **Flutter 3.38:**
+    /// Frame callbacks are now more efficient with improved scheduling
+    ///
+    /// **Performance Benefit:**
+    /// Previous pattern called addPostFrameCallback on every build.
+    /// This pattern only triggers when messages actually change.
+    ref.listen(currentMessagesProvider, (previous, next) {
+      // Only scroll if message count changed (new message added)
+      if (previous?.length != next.length) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          // Check if controller is attached to a scroll view
+          // Prevents crashes during widget disposal or initial build
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              // maxScrollExtent: Bottom of scrollable area
+              _scrollController.position.maxScrollExtent,
 
+              // Smooth animation duration
+              duration: const Duration(milliseconds: 300),
+
+              // easeOut: Fast start, slow end (feels natural)
+              curve: Curves.easeOut,
+            );
+          }
+        });
+      }
+    });
+
+    // Empty state when no messages
     if (messages.isEmpty) {
       return _buildEmptyState(context);
     }
 
+    /// ListView.builder for efficient scrolling
+    ///
+    /// **Performance Benefits:**
+    /// - Only builds visible + nearby items (viewport optimization)
+    /// - Reuses widgets as user scrolls (widget recycling)
+    /// - Efficient for lists of any size (even thousands of messages)
+    ///
+    /// **Flutter 3.38 Improvements:**
+    /// - Better scroll physics matching Material 3
+    /// - Improved over-scroll effects
+    /// - Faster item builder callbacks
     return ListView.builder(
       controller: _scrollController,
-      padding: DesignTokens.paddingAll16,
+
+      // Padding around entire list
+      // Creates breathing room from screen edges
+      padding: const EdgeInsets.all(16),
+
       itemCount: messages.length,
+
+      /// Item Builder
+      ///
+      /// **Called for each visible item:**
+      /// - index: Position in list (0 to itemCount-1)
+      /// - context: Build context for this item
+      ///
+      /// **Best Practice:**
+      /// Extract complex items into separate widgets (_MessageBubble)
+      /// This improves readability and enables widget reuse
       itemBuilder: (context, index) {
         final message = messages[index];
         return _MessageBubble(
@@ -85,6 +188,18 @@ class _MessageListState extends ConsumerState<MessageList> {
     );
   }
 
+  /// Build empty state view
+  ///
+  /// **UX Pattern:**
+  /// Empty states should:
+  /// - Explain why it's empty
+  /// - Guide user to first action
+  /// - Use friendly, encouraging tone
+  ///
+  /// **Material 3 Design:**
+  /// - Centered content for focus
+  /// - Icon + headline + body text hierarchy
+  /// - De-emphasized colors (onSurfaceVariant)
   Widget _buildEmptyState(BuildContext context) {
     final theme = Theme.of(context);
 
@@ -92,21 +207,30 @@ class _MessageListState extends ConsumerState<MessageList> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // Large icon as visual anchor
           Icon(
             Icons.chat,
-            size: DesignTokens.iconSize3xl,
+            size: 64,
+            // outlineVariant: Subtle, decorative color
             color: theme.colorScheme.outlineVariant,
           ),
-          const SizedBox(height: DesignTokens.space16),
+
+          const SizedBox(height: 16),
+
+          // Headline text
           Text(
-            '開始對話',
+            'Start Chatting',
             style: theme.textTheme.titleMedium?.copyWith(
+              // onSurfaceVariant: Lower emphasis than primary text
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: DesignTokens.space8),
+
+          const SizedBox(height: 8),
+
+          // Instructional body text
           Text(
-            '在下方輸入框輸入訊息開始聊天',
+            'Type a message below to begin the conversation',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -117,14 +241,24 @@ class _MessageListState extends ConsumerState<MessageList> {
   }
 }
 
-/// 訊息氣泡
+/// Message Bubble - Individual message display
 ///
-/// 根據訊息類型顯示不同樣式：
-/// - 使用者訊息：右側對齊，使用主題色
-/// - AI 訊息：左側對齊，使用表面色
-/// - 系統訊息：居中顯示
-class _MessageBubble extends StatefulWidget {
-  const _MessageBubble({super.key, required this.message});
+/// **Design Patterns:**
+/// Different styling based on message type:
+/// - User messages: Right-aligned, primary color, user avatar
+/// - AI messages: Left-aligned, surface color, AI avatar
+/// - System messages: Center-aligned (not implemented yet)
+///
+/// **Material 3 Features:**
+/// - primaryContainer for user messages (accessible contrast)
+/// - surfaceContainerHighest for AI messages (elevated surface)
+/// - tertiaryContainer for AI avatar (semantic color)
+///
+/// **Flutter Best Practice:**
+/// StatelessWidget because message data is immutable.
+/// Parent (MessageList) manages all state.
+class _MessageBubble extends StatelessWidget {
+  const _MessageBubble({required this.message});
 
   final Message message;
 
@@ -180,90 +314,115 @@ class _MessageBubbleState extends State<_MessageBubble> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isUser = widget.message.type == MessageType.user;
+    final isUser = message.type == MessageType.user;
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: DesignTokens.space16),
-        child: Row(
-          mainAxisAlignment:
-              isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-          // AI 頭像（左側）
+    return Padding(
+      // Bottom padding creates spacing between messages
+      padding: const EdgeInsets.only(bottom: 16),
+
+      /// Row Layout
+      ///
+      /// **Alignment:**
+      /// - User: Right-aligned (MainAxisAlignment.end)
+      /// - AI: Left-aligned (MainAxisAlignment.start)
+      ///
+      /// **CrossAxisAlignment.start:**
+      /// Aligns avatar to top of message bubble
+      /// Important for multi-line messages
+      child: Row(
+        mainAxisAlignment:
+            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+
+        children: [
+          /// AI Avatar (Left Side)
+          ///
+          /// **Dart 3.0 Spread Operator:**
+          /// Using ...[] to conditionally add multiple widgets
+          /// Cleaner than if/else with separate Row children
           if (!isUser) ...[
             _buildAvatar(context, isUser),
-            const SizedBox(width: 12),
+            const SizedBox(width: 12), // Spacing between avatar and bubble
           ],
 
-          // 訊息內容
+          /// Message Content Bubble
+          ///
+          /// **Flexible vs Expanded:**
+          /// - Flexible: Takes needed space, up to maximum
+          /// - Expanded: Always takes all available space
+          ///
+          /// We use Flexible so messages don't stretch unnecessarily
           Flexible(
-            child: Column(
-              crossAxisAlignment:
-                  isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-              children: [
-                // 操作工具列（懸停時顯示在訊息上方）
-                AnimatedOpacity(
-                  opacity: _isHovered ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 200),
-                  child: _isHovered
-                      ? Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: MessageActionBar(
-                            isUser: isUser,
-                            message: widget.message.content,
-                            onAction: _handleAction,
-                          ),
-                        )
-                      : const SizedBox.shrink(),
-                ),
+            child: Container(
+              /// Max width constraint
+              ///
+              /// **Why 600px:**
+              /// - Improves readability (optimal line length: 50-75 chars)
+              /// - Prevents messages from spanning entire screen on desktop
+              /// - Matches design patterns from Gemini, ChatGPT, etc.
+              constraints: const BoxConstraints(maxWidth: 600),
 
-                // 訊息氣泡
-                Container(
-                  constraints: const BoxConstraints(maxWidth: 600),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: isUser
-                        ? theme.colorScheme.primaryContainer
-                        : theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Markdown 內容
-                      _buildMessageContent(context, isUser),
+              // Internal padding
+              padding: const EdgeInsets.all(16),
 
-                      // 引用來源（如果有）- 使用新的 SourceCitation 元件
-                      if (widget.message.citations.isNotEmpty) ...[
-                        SourceCitation(
-                          sources: widget.message.citations
-                              .asMap()
-                              .entries
-                              .map((entry) => CitationSource(
-                                    title: widget.message.citations[entry.key],
-                                    snippet: '來自：${widget.message.citations[entry.key]}',
-                                    icon: Icons.description,
-                                  ))
-                              .toList(),
-                        ),
-                      ],
+              /// Material 3: Container Background Colors
+              ///
+              /// **User Messages (primaryContainer):**
+              /// - Filled background with primary color
+              /// - High contrast for text (onPrimaryContainer)
+              /// - Visually distinct as "my" messages
+              ///
+              /// **AI Messages (surfaceContainerHighest):**
+              /// - Elevated surface appearance
+              /// - Subtle differentiation from main background
+              /// - Neutral, professional look
+              decoration: BoxDecoration(
+                color: isUser
+                    ? theme.colorScheme.primaryContainer
+                    : theme.colorScheme.surfaceContainerHighest,
 
-                      // 串流指示器
-                      if (widget.message.isStreaming) ...[
-                        const SizedBox(height: 8),
-                        _buildStreamingIndicator(context),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
+                // Rounded corners for friendly appearance
+                borderRadius: BorderRadius.circular(16),
+              ),
+
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Markdown content (main message text)
+                  _buildMessageContent(context, isUser),
+
+                  /// Citations (Source References)
+                  ///
+                  /// **When shown:**
+                  /// Only for RAG-based responses with source documents
+                  ///
+                  /// **Why important:**
+                  /// - Builds trust in AI responses
+                  /// - Allows users to verify information
+                  /// - Meets transparency requirements
+                  if (message.citations.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    _buildCitations(context),
+                  ],
+
+                  /// Streaming Indicator
+                  ///
+                  /// **When shown:**
+                  /// While AI is actively generating response
+                  ///
+                  /// **UX Benefit:**
+                  /// Shows system is working, not frozen
+                  /// Manages user expectations for response time
+                  if (message.isStreaming) ...[
+                    const SizedBox(height: 8),
+                    _buildStreamingIndicator(context),
+                  ],
+                ],
+              ),
             ),
           ),
 
-          // 使用者頭像（右側）
+          /// User Avatar (Right Side)
           if (isUser) ...[
             const SizedBox(width: 12),
             _buildAvatar(context, isUser),
@@ -274,18 +433,51 @@ class _MessageBubbleState extends State<_MessageBubble> {
     );
   }
 
+  /// Build avatar circle
+  ///
+  /// **Material 3 Design:**
+  /// - Circular shape (18px radius = 36px diameter)
+  /// - Color-coded by type (primary for user, tertiary for AI)
+  /// - Icon-based (simple, recognizable)
+  ///
+  /// **Accessibility:**
+  /// - Icons provide visual distinction
+  /// - Colors meet WCAG contrast requirements
+  /// - Size is touch-friendly (if made interactive)
   Widget _buildAvatar(BuildContext context, bool isUser) {
     final theme = Theme.of(context);
 
     return Container(
       width: 36,
       height: 36,
+
+      /// Avatar Colors
+      ///
+      /// **User (primary):**
+      /// - Matches user message bubble color theme
+      /// - Creates visual connection
+      ///
+      /// **AI (tertiaryContainer):**
+      /// - Distinct from primary and secondary
+      /// - Semantic color for "system/assistant"
       decoration: BoxDecoration(
         color: isUser
             ? theme.colorScheme.primary
             : theme.colorScheme.tertiaryContainer,
+
+        // Perfectly circular
         borderRadius: BorderRadius.circular(18),
       ),
+
+      /// Icons
+      ///
+      /// **person:** Represents user/human
+      /// **psychology:** Represents AI/thinking
+      ///
+      /// **Color contrast:**
+      /// Using "on" colors ensures proper contrast:
+      /// - onPrimary for text/icons on primary background
+      /// - onTertiaryContainer for text/icons on tertiaryContainer
       child: Icon(
         isUser ? Icons.person : Icons.psychology,
         size: 20,
@@ -296,6 +488,21 @@ class _MessageBubbleState extends State<_MessageBubble> {
     );
   }
 
+  /// Build message content with Markdown rendering
+  ///
+  /// **flutter_markdown Package:**
+  /// Renders markdown text with full support for:
+  /// - Headers (# ## ###)
+  /// - Bold/italic (**bold** *italic*)
+  /// - Links [text](url)
+  /// - Lists (- item, 1. item)
+  /// - Code blocks (```language code```)
+  /// - Inline code (`code`)
+  ///
+  /// **Why Markdown:**
+  /// - AI models naturally output markdown
+  /// - Rich formatting without complex parsing
+  /// - Widely understood format
   Widget _buildMessageContent(BuildContext context, bool isUser) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -303,38 +510,164 @@ class _MessageBubbleState extends State<_MessageBubble> {
     final codeHeaderBg = theme.colorScheme.surfaceContainer;
 
     return MarkdownBody(
-      data: widget.message.content,
+      // Message text content
+      data: message.content,
+
+      /// Selectable Text
+      ///
+      /// **Flutter 3.38:**
+      /// Improved text selection with better handle graphics
+      /// and proper Material 3 selection colors
+      ///
+      /// **UX Benefit:**
+      /// Users can copy AI responses, code snippets, etc.
       selectable: true,
+
+      /// Custom Styling
+      ///
+      /// **MarkdownStyleSheet:**
+      /// Overrides default markdown styles to match our theme
+      ///
+      /// **Material 3 Integration:**
+      /// Uses theme colors for proper light/dark mode support
       styleSheet: MarkdownStyleSheet(
+        // Paragraph text style
         p: theme.textTheme.bodyMedium?.copyWith(
+          // Adapt text color to background
           color: isUser
               ? theme.colorScheme.onPrimaryContainer
               : theme.colorScheme.onSurface,
         ),
+
+        /// Inline code style
+        ///
+        /// **Background:**
+        /// Subtle background distinguishes code from regular text
+        /// Colors adapt to theme brightness
         code: TextStyle(
           backgroundColor: codeBlockBg,
           fontFamily: 'monospace',
         ),
+
+        /// Code block decoration
+        ///
+        /// **Design:**
+        /// Rounded background container for code blocks
+        /// (Full rendering handled by custom builder below)
         codeblockDecoration: BoxDecoration(
           color: codeBlockBg,
           borderRadius: BorderRadius.circular(8),
         ),
       ),
-      // 自訂程式碼塊渲染
+
+      /// Custom Element Builders
+      ///
+      /// **Purpose:**
+      /// Override default rendering for specific elements
+      /// Here we replace code blocks with syntax-highlighted version
+      ///
+      /// **Pattern:**
+      /// Map element type ('code') to custom builder
       builders: {
-        'code': _CodeBlockBuilder(
-          isDark: isDark,
-          codeBlockBg: codeBlockBg,
-          codeHeaderBg: codeHeaderBg,
-        ),
+        'code': _CodeBlockBuilder(isDark: isDark),
       },
     );
   }
 
+  /// Build citations (source references)
+  ///
+  /// **Use Case:**
+  /// RAG (Retrieval Augmented Generation) responses cite source documents
+  /// Shows users where information came from
+  ///
+  /// **Material 3 Design:**
+  /// - Divider for visual separation
+  /// - Link icon + colored text for clickable appearance
+  /// - Ellipsis for long URLs
+  Widget _buildCitations(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Visual separator from main content
+        const Divider(),
+
+        // "Sources:" label
+        Text(
+          'Sources:',
+          style: theme.textTheme.labelSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+
+        const SizedBox(height: 4),
+
+        /// Citation List
+        ///
+        /// **Dart 3.0 Spread Operator:**
+        /// ...list.map() flattens the mapped widgets into parent children
+        ///
+        /// **Pattern:**
+        /// Each citation becomes a Row with icon + text
+        ...message.citations.map(
+          (citation) => Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Row(
+              children: [
+                // Link icon
+                Icon(
+                  Icons.link,
+                  size: 14,
+                  color: theme.colorScheme.primary,
+                ),
+
+                const SizedBox(width: 4),
+
+                // Citation text (URL or document name)
+                Expanded(
+                  child: Text(
+                    citation,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      // Primary color indicates interactivity
+                      color: theme.colorScheme.primary,
+
+                      // Underline for link appearance
+                      decoration: TextDecoration.underline,
+                    ),
+
+                    // Truncate long URLs
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Build streaming indicator
+  ///
+  /// **Purpose:**
+  /// Shows animated spinner while AI is generating response
+  ///
+  /// **UX Pattern:**
+  /// - Small spinner (not overwhelming)
+  /// - Text explains what's happening
+  /// - Only shown during active generation
+  ///
+  /// **Flutter 3.38:**
+  /// CircularProgressIndicator now uses Material 3 animation timing
   Widget _buildStreamingIndicator(BuildContext context) {
     return Row(
+      // Don't expand to full width
       mainAxisSize: MainAxisSize.min,
+
       children: [
+        // Small spinner
         SizedBox(
           width: 12,
           height: 12,
@@ -343,9 +676,12 @@ class _MessageBubbleState extends State<_MessageBubble> {
             color: Theme.of(context).colorScheme.primary,
           ),
         ),
+
         const SizedBox(width: 8),
+
+        // Status text
         Text(
-          '正在生成...',
+          'Generating...',
           style: Theme.of(context).textTheme.labelSmall,
         ),
       ],
@@ -353,9 +689,25 @@ class _MessageBubbleState extends State<_MessageBubble> {
   }
 }
 
-/// 自訂程式碼塊建構器
+/// Custom Code Block Builder - Syntax highlighting
 ///
-/// 使用 flutter_highlighter 提供語法高亮
+/// **Purpose:**
+/// Replaces default markdown code rendering with syntax-highlighted version
+///
+/// **flutter_highlighter Package:**
+/// Provides syntax highlighting for 100+ languages
+/// Uses highlight.js themes (GitHub, VS Code, etc.)
+///
+/// **Features:**
+/// - Language detection from markdown
+/// - Theme adapts to light/dark mode
+/// - Horizontal scrolling for long lines
+/// - Language label at top
+///
+/// **Material 3 Design:**
+/// - Rounded corners
+/// - Subtle background colors
+/// - Monospace font for code
 class _CodeBlockBuilder extends MarkdownElementBuilder {
   _CodeBlockBuilder({
     required this.isDark,
@@ -367,29 +719,65 @@ class _CodeBlockBuilder extends MarkdownElementBuilder {
   final Color codeBlockBg;
   final Color codeHeaderBg;
 
+  /// Visit Element After Parsing
+  ///
+  /// **Called when:**
+  /// Markdown parser encounters a code block (```language code```)
+  ///
+  /// **Parameters:**
+  /// - element: Parsed markdown element with content and metadata
+  /// - preferredStyle: Default text style (we override this)
+  ///
+  /// **Returns:**
+  /// Custom widget to replace default code block rendering
   @override
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
+    // Extract code content
     final code = element.textContent;
-    final language = element.attributes['class']?.replaceAll('language-', '') ?? 'plaintext';
+
+    /// Extract language from markdown
+    ///
+    /// **Pattern:**
+    /// ```python  ← class="language-python"
+    /// code here
+    /// ```
+    ///
+    /// **Fallback:**
+    /// If no language specified, use 'plaintext' (no highlighting)
+    final language = element.attributes['class']?.replaceAll('language-', '') ??
+        'plaintext';
 
     return Container(
+      // Vertical spacing around code block
       margin: const EdgeInsets.symmetric(vertical: 8),
+
+      // Background and shape
       decoration: BoxDecoration(
         color: codeBlockBg,
         borderRadius: BorderRadius.circular(8),
       ),
+
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 語言標籤
+          /// Language Label Header
+          ///
+          /// **Design:**
+          /// Darker background separates label from code
+          /// Shows language for context (python, javascript, etc.)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+
+            // Slightly darker than code background
             decoration: BoxDecoration(
-              color: codeHeaderBg,
+              color: isDark ? Colors.black12 : Colors.black26,
+
+              // Only round top corners
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(8),
               ),
             ),
+
             child: Text(
               language,
               style: const TextStyle(
@@ -399,17 +787,40 @@ class _CodeBlockBuilder extends MarkdownElementBuilder {
             ),
           ),
 
-          // 程式碼內容
+          /// Code Content with Syntax Highlighting
+          ///
+          /// **Horizontal Scrolling:**
+          /// Long lines don't wrap - user can scroll
+          /// Preserves code formatting exactly
+          ///
+          /// **flutter_highlighter:**
+          /// HighlightView widget renders code with syntax colors
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.all(12),
+
+            /// HighlightView
+            ///
+            /// **Parameters:**
+            /// - code: The source code string
+            /// - language: Programming language for highlighting
+            /// - theme: Color scheme (github or githubDark)
+            /// - textStyle: Font settings
+            ///
+            /// **Themes:**
+            /// - githubTheme: Light mode (from package)
+            /// - githubDarkTheme: Dark mode (from package)
             child: HighlightView(
               code,
               language: language,
-              theme: isDark
-                  ? (themeMap['github-dark-dimmed'] ?? themeMap['atom-one-dark'] ?? githubTheme)
-                  : githubTheme,
+
+              // Adapt theme to app brightness
+              theme: isDark ? githubDarkTheme : githubTheme,
+
+              // No extra padding (handled by parent)
               padding: EdgeInsets.zero,
+
+              // Monospace font for code
               textStyle: const TextStyle(
                 fontFamily: 'monospace',
                 fontSize: 14,

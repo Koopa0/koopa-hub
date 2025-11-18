@@ -3,58 +3,83 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/knowledge_provider.dart';
 
-/// 知識庫統計資訊
+/// Knowledge Base Statistics - Overview metrics
 ///
-/// 顯示：
-/// - 總文件數
-/// - 已索引文件數
-/// - 索引中文件數
-/// - 失敗文件數
+/// **Purpose:**
+/// Displays at-a-glance summary of knowledge base status:
+/// - Total documents
+/// - Indexed (ready for use)
+/// - Indexing (in progress)
+/// - Failed (errors)
+///
+/// **Flutter 3.38 Features:**
+/// - Material 3 Card with updated styling
+/// - ColorScheme-based theming
+///
+/// **Layout:**
+/// Row of 4 equal-width stat cards
 class KnowledgeStats extends ConsumerWidget {
   const KnowledgeStats({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch stats - rebuilds when any count changes
     final stats = ref.watch(knowledgeStatsProvider);
     final theme = Theme.of(context);
 
     return Container(
       padding: const EdgeInsets.all(16),
+
+      /// Row of Stat Cards
+      ///
+      /// **Layout:**
+      /// Each card is Expanded (equal width)
+      /// Spacing between cards: 12px
       child: Row(
         children: [
+          // Total documents
           Expanded(
             child: _StatCard(
               icon: Icons.description,
-              label: '總文件',
+              label: 'Total',
               value: '${stats.total}',
               color: theme.colorScheme.primary,
             ),
           ),
+
           const SizedBox(width: 12),
+
+          // Successfully indexed
           Expanded(
             child: _StatCard(
               icon: Icons.check_circle,
-              label: '已索引',
+              label: 'Indexed',
               value: '${stats.indexed}',
-              color: theme.colorScheme.tertiary,
+              color: Colors.green, // Success color
             ),
           ),
+
           const SizedBox(width: 12),
+
+          // Currently indexing
           Expanded(
             child: _StatCard(
               icon: Icons.sync,
-              label: '索引中',
+              label: 'Indexing',
               value: '${stats.indexing}',
-              color: theme.colorScheme.secondary,
+              color: Colors.blue, // In-progress color
             ),
           ),
+
           const SizedBox(width: 12),
+
+          // Failed indexing
           Expanded(
             child: _StatCard(
               icon: Icons.error,
-              label: '失敗',
+              label: 'Failed',
               value: '${stats.failed}',
-              color: theme.colorScheme.error,
+              color: theme.colorScheme.error, // Error color
             ),
           ),
         ],
@@ -63,7 +88,20 @@ class KnowledgeStats extends ConsumerWidget {
   }
 }
 
-/// 統計卡片
+/// Stat Card - Individual metric display
+///
+/// **Design Pattern:**
+/// Vertical layout: Icon → Value → Label
+///
+/// **Material 3:**
+/// Uses Card for elevated surface
+///
+/// **Color Coding:**
+/// Each metric has semantic color:
+/// - Primary: Total count
+/// - Green: Success
+/// - Blue: In progress
+/// - Error: Failure
 class _StatCard extends StatelessWidget {
   const _StatCard({
     required this.icon,
@@ -84,10 +122,28 @@ class _StatCard extends StatelessWidget {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
+
+        /// Vertical Stack
+        ///
+        /// **Layout:**
+        /// Icon (32px, colored)
+        ///   ↓
+        /// Value (large, bold, colored)
+        ///   ↓
+        /// Label (small, de-emphasized)
         child: Column(
           children: [
+            // Icon (colored for visual distinction)
             Icon(icon, color: color, size: 32),
+
             const SizedBox(height: 8),
+
+            /// Value
+            ///
+            /// **Typography:**
+            /// headlineMedium: Large, prominent number
+            /// Bold weight: Emphasizes the metric
+            /// Colored: Matches icon for visual consistency
             Text(
               value,
               style: theme.textTheme.headlineMedium?.copyWith(
@@ -95,7 +151,14 @@ class _StatCard extends StatelessWidget {
                 color: color,
               ),
             ),
+
             const SizedBox(height: 4),
+
+            /// Label
+            ///
+            /// **Typography:**
+            /// bodySmall: Smaller descriptive text
+            /// onSurfaceVariant: De-emphasized color
             Text(
               label,
               style: theme.textTheme.bodySmall?.copyWith(
