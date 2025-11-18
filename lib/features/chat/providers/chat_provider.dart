@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/chat_session.dart';
@@ -26,12 +27,61 @@ class ChatSessions extends _$ChatSessions {
   @override
   List<ChatSession> build() {
     // TODO: 從本地儲存（Hive）載入會話列表
-    // 現在先返回一個示範會話
-    return [
-      ChatSession.create(
-        title: '歡迎使用 Koopa Assistant',
-      ),
-    ];
+    // 現在先返回示範會話，展示新功能
+
+    // 創建示範會話，展示 MessageActionBar 和 SourceCitation
+    final demoSession = ChatSession.create(
+      title: '歡迎使用 Koopa Hub',
+    );
+
+    // 添加示範訊息
+    final userMessage1 = Message.user('什麼是 Flutter 的狀態管理？');
+    final aiMessage1 = Message.assistant(
+      'Flutter 提供多種狀態管理方案，包括：\n\n'
+      '1. **Provider** - Google 官方推薦的狀態管理方案\n'
+      '2. **Riverpod** - Provider 的改進版，提供更好的類型安全\n'
+      '3. **Bloc** - 使用事件驅動的狀態管理\n'
+      '4. **GetX** - 輕量級的狀態管理和路由方案\n\n'
+      '在這個專案中，我們使用 **Riverpod 3.0** 配合程式碼生成，'
+      '提供類型安全和更簡潔的 API。',
+      citations: [
+        'Flutter 官方文件 - 狀態管理',
+        'Riverpod 文件',
+        'Flutter 實戰指南',
+      ],
+    );
+
+    final userMessage2 = Message.user('可以舉個 Riverpod 的例子嗎？');
+    final aiMessage2 = Message.assistant(
+      '當然！這是一個簡單的 Riverpod 範例：\n\n'
+      '```dart\n'
+      '@riverpod\n'
+      'class Counter extends _\$Counter {\n'
+      '  @override\n'
+      '  int build() => 0;\n'
+      '\n'
+      '  void increment() => state++;\n'
+      '  void decrement() => state--;\n'
+      '}\n'
+      '```\n\n'
+      '在 UI 中使用：\n\n'
+      '```dart\n'
+      'final count = ref.watch(counterProvider);\n'
+      '```\n\n'
+      '點擊訊息上方的操作列可以複製、編輯或刪除訊息！',
+      citations: [
+        'Riverpod 程式碼生成指南',
+      ],
+    );
+
+    // 組合所有訊息到會話中
+    var sessionWithMessages = demoSession
+        .addMessage(userMessage1)
+        .addMessage(aiMessage1)
+        .addMessage(userMessage2)
+        .addMessage(aiMessage2);
+
+    return [sessionWithMessages];
   }
 
   /// 建立新會話
@@ -92,18 +142,22 @@ class ChatSessions extends _$ChatSessions {
 
 /// 當前活躍會話 ID Provider
 ///
-/// 使用 StateProvider 來管理簡單的狀態
-/// StateProvider 適合用於：
-/// 1. 簡單的值（String, int, bool 等）
-/// 2. 需要從 UI 直接更新的狀態
-final currentSessionIdProvider = StateProvider<String?>((ref) {
-  // 監聽會話列表
-  final sessions = ref.watch(chatSessionsProvider);
+/// 使用 Riverpod 3.0 code generation 來管理簡單的狀態
+/// 管理當前選擇的會話 ID
+@riverpod
+class CurrentSessionId extends _$CurrentSessionId {
+  @override
+  String? build() {
+    // 監聽會話列表
+    final sessions = ref.watch(chatSessionsProvider);
 
-  // 如果沒有選中的會話，自動選擇第一個
-  if (sessions.isEmpty) return null;
-  return sessions.first.id;
-});
+    // 如果沒有選中的會話，自動選擇第一個
+    if (sessions.isEmpty) return null;
+    return sessions.first.id;
+  }
+
+  void setSessionId(String? id) => state = id;
+}
 
 /// 當前會話 Provider
 ///
@@ -114,7 +168,8 @@ final currentSessionIdProvider = StateProvider<String?>((ref) {
 /// 1. 自動重新計算
 /// 2. 避免重複的狀態
 /// 3. 保持資料的單一來源（single source of truth）
-final currentSessionProvider = Provider<ChatSession?>((ref) {
+@riverpod
+ChatSession? currentSession(Ref ref) {
   final sessionId = ref.watch(currentSessionIdProvider);
   if (sessionId == null) return null;
 
@@ -124,16 +179,17 @@ final currentSessionProvider = Provider<ChatSession?>((ref) {
   } catch (e) {
     return null;
   }
-});
+}
 
 /// 當前會話的訊息列表 Provider
 ///
 /// 另一個衍生 provider
 /// 直接提供當前會話的訊息列表，簡化 UI 層的程式碼
-final currentMessagesProvider = Provider<List<Message>>((ref) {
+@riverpod
+List<Message> currentMessages(Ref ref) {
   final session = ref.watch(currentSessionProvider);
   return session?.messages ?? [];
-});
+}
 
 /// 聊天服務 Provider（用於發送訊息）
 ///
@@ -153,15 +209,28 @@ class ChatService extends _$ChatService {
   /// 2. 呼叫 API
   /// 3. 接收串流回應
   /// 4. 更新 AI 訊息
+  /// 5. 處理錯誤並提供用戶反饋
   Future<void> sendMessage(String content) async {
+    // 驗證輸入
+    if (content.trim().isEmpty) {
+      debugPrint('Cannot send empty message');
+      return;
+    }
+
     // 獲取當前會話
     final sessionId = ref.read(currentSessionIdProvider);
-    if (sessionId == null) return;
+    if (sessionId == null) {
+      debugPrint('No session selected');
+      return;
+    }
 
     final session = ref.read(chatSessionsProvider.notifier).getSession(
           sessionId,
         );
-    if (session == null) return;
+    if (session == null) {
+      debugPrint('Session not found: $sessionId');
+      return;
+    }
 
     // 1. 添加使用者訊息
     final userMessage = Message.user(content);
@@ -170,29 +239,49 @@ class ChatService extends _$ChatService {
 
     // 2. 添加一個空的 AI 訊息（用於串流）
     final aiMessage = Message.assistant('', isStreaming: true);
-    final sessionWithAi = updatedSession.addMessage(aiMessage);
+    var sessionWithAi = updatedSession.addMessage(aiMessage);
     ref.read(chatSessionsProvider.notifier).updateSession(sessionWithAi);
 
-    // TODO: 3. 呼叫 API 並處理串流回應
-    // 這裡先用模擬回應
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      // TODO: 3. 呼叫 API 並處理串流回應
+      // 這裡先用模擬回應
+      await Future.delayed(const Duration(seconds: 1));
 
-    final mockResponse = '這是一個模擬回應。真實的 API 整合將在後端完成後實作。';
-    final completedMessage = aiMessage.copyWith(
-      content: mockResponse,
-      isStreaming: false,
-    );
+      final mockResponse =
+          '這是一個模擬回應。真實的 API 整合將在後端完成後實作。';
+      final completedMessage = aiMessage.copyWith(
+        content: mockResponse,
+        isStreaming: false,
+      );
 
-    final finalSession = sessionWithAi.updateLastMessage(completedMessage);
-    ref.read(chatSessionsProvider.notifier).updateSession(finalSession);
+      final finalSession = sessionWithAi.updateLastMessage(completedMessage);
+      ref.read(chatSessionsProvider.notifier).updateSession(finalSession);
 
-    // 4. 如果是第一條訊息，自動更新標題
-    if (session.messages.isEmpty) {
-      final title = content.length > 30
-          ? '${content.substring(0, 30)}...'
-          : content;
-      final sessionWithTitle = finalSession.updateTitle(title);
-      ref.read(chatSessionsProvider.notifier).updateSession(sessionWithTitle);
+      // 4. 如果是第一條訊息，自動更新標題
+      if (session.messages.isEmpty) {
+        final title = content.length > 30
+            ? '${content.substring(0, 30)}...'
+            : content;
+        final sessionWithTitle = finalSession.updateTitle(title);
+        ref.read(chatSessionsProvider.notifier).updateSession(sessionWithTitle);
+      }
+    } catch (e, stackTrace) {
+      debugPrint('Failed to send message: $e');
+      debugPrint('Stack trace: $stackTrace');
+
+      // 更新 AI 訊息為錯誤狀態
+      final errorMessage = aiMessage.copyWith(
+        content: '❌ 發送失敗\n\n'
+            '發生錯誤，請稍後再試。\n'
+            '錯誤詳情: ${e.toString()}',
+        isStreaming: false,
+      );
+
+      final errorSession = sessionWithAi.updateLastMessage(errorMessage);
+      ref.read(chatSessionsProvider.notifier).updateSession(errorSession);
+
+      // TODO: 可以選擇性地添加重試機制
+      // TODO: 可以選擇性地顯示 SnackBar 通知用戶
     }
   }
 }

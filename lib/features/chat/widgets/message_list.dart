@@ -6,8 +6,11 @@ import 'package:flutter_highlighter/themes/github.dart' show githubTheme;
 import 'package:flutter_highlighter/themes/github-dark.dart' show githubDarkTheme;
 import 'package:markdown/markdown.dart' as md;
 
+import '../../../core/constants/design_tokens.dart';
 import '../providers/chat_provider.dart';
 import '../models/message.dart';
+import 'message_action_bar.dart';
+import 'source_citation.dart';
 
 /// Message List - Scrollable conversation display
 ///
@@ -56,6 +59,7 @@ class _MessageListState extends ConsumerState<MessageList> {
   /// **Important:** Must be disposed to prevent memory leaks
   /// ScrollController holds native platform resources
   final ScrollController _scrollController = ScrollController();
+  List<Message> _previousMessages = [];
 
   @override
   void dispose() {
@@ -70,6 +74,30 @@ class _MessageListState extends ConsumerState<MessageList> {
     /// Always dispose controllers in reverse order of creation
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(MessageList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // 只在訊息數量變化時滾動 - 避免在每次 build 時都添加 callback
+    final messages = ref.read(currentMessagesProvider);
+    if (messages.length != _previousMessages.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToBottom();
+      });
+      _previousMessages = List.from(messages);
+    }
+  }
+
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   @override
@@ -152,7 +180,10 @@ class _MessageListState extends ConsumerState<MessageList> {
       /// This improves readability and enables widget reuse
       itemBuilder: (context, index) {
         final message = messages[index];
-        return _MessageBubble(message: message);
+        return _MessageBubble(
+          key: ValueKey(message.id), // 添加 key 以提升性能和穩定性
+          message: message,
+        );
       },
     );
   }
@@ -224,17 +255,66 @@ class _MessageListState extends ConsumerState<MessageList> {
 /// - tertiaryContainer for AI avatar (semantic color)
 ///
 /// **Flutter Best Practice:**
-/// StatelessWidget because message data is immutable.
-/// Parent (MessageList) manages all state.
-class _MessageBubble extends StatelessWidget {
+/// StatefulWidget to manage hover state for action buttons.
+/// Uses local state for UI interactions while parent manages data.
+class _MessageBubble extends StatefulWidget {
   const _MessageBubble({required this.message});
 
   final Message message;
 
   @override
+  State<_MessageBubble> createState() => _MessageBubbleState();
+}
+
+class _MessageBubbleState extends State<_MessageBubble> {
+  bool _isHovered = false;
+
+  void _handleAction(MessageAction action) {
+    // TODO: 實作各個操作
+    switch (action) {
+      case MessageAction.copy:
+        // 複製功能已在 MessageActionBar 中處理
+        break;
+      case MessageAction.edit:
+        // TODO: 實作編輯功能
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('編輯功能開發中'),
+              duration: Duration(seconds: 1),
+            ),
+          );
+        }
+        break;
+      case MessageAction.regenerate:
+        // TODO: 實作重新生成功能
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('重新生成功能開發中'),
+              duration: Duration(seconds: 1),
+            ),
+          );
+        }
+        break;
+      case MessageAction.delete:
+        // TODO: 實作刪除功能
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('刪除功能開發中'),
+              duration: Duration(seconds: 1),
+            ),
+          );
+        }
+        break;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isUser = message.type == MessageType.user;
+    final isUser = widget.message.type == MessageType.user;
 
     return Padding(
       // Bottom padding creates spacing between messages
@@ -320,7 +400,7 @@ class _MessageBubble extends StatelessWidget {
                   /// - Builds trust in AI responses
                   /// - Allows users to verify information
                   /// - Meets transparency requirements
-                  if (message.citations.isNotEmpty) ...[
+                  if (widget.message.citations.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     _buildCitations(context),
                   ],
@@ -333,7 +413,7 @@ class _MessageBubble extends StatelessWidget {
                   /// **UX Benefit:**
                   /// Shows system is working, not frozen
                   /// Manages user expectations for response time
-                  if (message.isStreaming) ...[
+                  if (widget.message.isStreaming) ...[
                     const SizedBox(height: 8),
                     _buildStreamingIndicator(context),
                   ],
@@ -425,10 +505,12 @@ class _MessageBubble extends StatelessWidget {
   Widget _buildMessageContent(BuildContext context, bool isUser) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final codeBlockBg = theme.colorScheme.surfaceContainerHighest;
+    final codeHeaderBg = theme.colorScheme.surfaceContainer;
 
     return MarkdownBody(
       // Message text content
-      data: message.content,
+      data: widget.message.content,
 
       /// Selectable Text
       ///
@@ -462,7 +544,7 @@ class _MessageBubble extends StatelessWidget {
         /// Subtle background distinguishes code from regular text
         /// Colors adapt to theme brightness
         code: TextStyle(
-          backgroundColor: isDark ? Colors.black26 : Colors.black12,
+          backgroundColor: codeBlockBg,
           fontFamily: 'monospace',
         ),
 
@@ -472,7 +554,7 @@ class _MessageBubble extends StatelessWidget {
         /// Rounded background container for code blocks
         /// (Full rendering handled by custom builder below)
         codeblockDecoration: BoxDecoration(
-          color: isDark ? Colors.black26 : Colors.black12,
+          color: codeBlockBg,
           borderRadius: BorderRadius.circular(8),
         ),
       ),
@@ -527,7 +609,7 @@ class _MessageBubble extends StatelessWidget {
         ///
         /// **Pattern:**
         /// Each citation becomes a Row with icon + text
-        ...message.citations.map(
+        ...widget.message.citations.map(
           (citation) => Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Row(
@@ -626,9 +708,15 @@ class _MessageBubble extends StatelessWidget {
 /// - Subtle background colors
 /// - Monospace font for code
 class _CodeBlockBuilder extends MarkdownElementBuilder {
-  _CodeBlockBuilder({required this.isDark});
+  _CodeBlockBuilder({
+    required this.isDark,
+    required this.codeBlockBg,
+    required this.codeHeaderBg,
+  });
 
   final bool isDark;
+  final Color codeBlockBg;
+  final Color codeHeaderBg;
 
   /// Visit Element After Parsing
   ///
@@ -664,7 +752,7 @@ class _CodeBlockBuilder extends MarkdownElementBuilder {
 
       // Background and shape
       decoration: BoxDecoration(
-        color: isDark ? Colors.black26 : Colors.black12,
+        color: codeBlockBg,
         borderRadius: BorderRadius.circular(8),
       ),
 

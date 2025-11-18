@@ -12,8 +12,42 @@ class KnowledgeDocuments extends _$KnowledgeDocuments {
   @override
   List<KnowledgeDocument> build() {
     // TODO: 從本地儲存（Hive）載入文件列表
-    // 現在返回空列表
-    return [];
+    // 現在返回示範文件，展示不同狀態
+
+    // 示範文件 1: 已索引的 PDF
+    final doc1 = KnowledgeDocument.create(
+      path: '/documents/flutter_guide.pdf',
+      size: 2048576, // 2MB
+    ).markAsIndexed(
+      summary: 'Flutter 開發完整指南，涵蓋基礎概念、狀態管理、路由導航等核心主題',
+      vectorCount: 125,
+    );
+
+    // 示範文件 2: 已索引的 Markdown
+    final doc2 = KnowledgeDocument.create(
+      path: '/documents/riverpod_tutorial.md',
+      size: 512000, // 500KB
+    ).markAsIndexed(
+      summary: 'Riverpod 3.0 使用教學，包含程式碼生成和最佳實踐',
+      vectorCount: 68,
+    );
+
+    // 示範文件 3: 索引中
+    final doc3 = KnowledgeDocument.create(
+      path: '/documents/design_patterns.txt',
+      size: 1024000, // 1MB
+    ).markAsIndexing();
+
+    // 示範文件 4: 已索引的 JSON
+    final doc4 = KnowledgeDocument.create(
+      path: '/data/api_documentation.json',
+      size: 256000, // 250KB
+    ).markAsIndexed(
+      summary: 'API 文件集合，包含所有端點的詳細說明和範例',
+      vectorCount: 42,
+    );
+
+    return [doc1, doc2, doc3, doc4];
   }
 
   /// 添加文件
@@ -107,12 +141,13 @@ class KnowledgeDocuments extends _$KnowledgeDocuments {
 /// 知識庫統計資訊 Provider
 ///
 /// 衍生 provider，提供統計資訊
-final knowledgeStatsProvider = Provider<({
+@riverpod
+({
   int total,
   int indexed,
   int indexing,
   int failed,
-})>((ref) {
+}) knowledgeStats(Ref ref) {
   final documents = ref.watch(knowledgeDocumentsProvider);
 
   return (
@@ -121,12 +156,13 @@ final knowledgeStatsProvider = Provider<({
     indexing: documents.where((d) => d.status == DocumentStatus.indexing).length,
     failed: documents.where((d) => d.status == DocumentStatus.failed).length,
   );
-});
+}
 
 /// 可刪除的文件列表 Provider
 ///
 /// 只顯示可以刪除的文件（排除正在索引的）
-final deletableDocumentsProvider = Provider<List<KnowledgeDocument>>((ref) {
+@riverpod
+List<KnowledgeDocument> deletableDocuments(Ref ref) {
   final documents = ref.watch(knowledgeDocumentsProvider);
   return documents.where((doc) => doc.canDelete).toList();
-});
+}
