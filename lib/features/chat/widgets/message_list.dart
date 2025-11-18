@@ -11,6 +11,10 @@ import '../providers/chat_provider.dart';
 import '../models/message.dart';
 import 'message_action_bar.dart';
 import 'source_citation.dart';
+import 'thinking_steps.dart';
+import 'tool_calling.dart';
+import 'source_card.dart';
+import 'artifact_viewer.dart';
 
 /// Message List - Scrollable conversation display
 ///
@@ -379,6 +383,26 @@ class _MessageBubbleState extends State<_MessageBubble> {
     );
   }
 
+  /// 顯示 Artifact 檢視器
+  void _showArtifactViewer(BuildContext context) {
+    if (widget.message.artifact == null) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          width: 800,
+          height: 600,
+          padding: const EdgeInsets.all(0),
+          child: ArtifactViewer(
+            artifact: widget.message.artifact!,
+            onClose: () => Navigator.pop(context),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -456,10 +480,49 @@ class _MessageBubbleState extends State<_MessageBubble> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  /// Thinking Steps (AI reasoning process)
+                  ///
+                  /// **When shown:**
+                  /// For AI messages with thinking steps (Claude-style)
+                  ///
+                  /// **UX Benefit:**
+                  /// Shows AI's reasoning process, builds trust
+                  if (!isUser && widget.message.thinkingSteps != null && widget.message.thinkingSteps!.isNotEmpty) ...[
+                    ThinkingStepsWidget(
+                      steps: widget.message.thinkingSteps!,
+                      isExpanded: true,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+
+                  /// Tool Calling (function invocations)
+                  ///
+                  /// **When shown:**
+                  /// When AI uses tools (calculator, web search, etc.)
+                  ///
+                  /// **UX Benefit:**
+                  /// Shows what tools AI is using and their results
+                  if (!isUser && widget.message.toolCalls != null && widget.message.toolCalls!.isNotEmpty) ...[
+                    ToolCallsList(toolCalls: widget.message.toolCalls!),
+                    const SizedBox(height: 12),
+                  ],
+
+                  /// Web Search Sources
+                  ///
+                  /// **When shown:**
+                  /// For responses with web search citations (Perplexity-style)
+                  ///
+                  /// **UX Benefit:**
+                  /// Shows source URLs with previews, builds credibility
+                  if (!isUser && widget.message.sources != null && widget.message.sources!.isNotEmpty) ...[
+                    SourcesGrid(sources: widget.message.sources!, compact: false),
+                    const SizedBox(height: 12),
+                  ],
+
                   // Markdown content (main message text)
                   _buildMessageContent(context, isUser),
 
-                  /// Citations (Source References)
+                  /// Citations (Old source references - kept for backward compatibility)
                   ///
                   /// **When shown:**
                   /// Only for RAG-based responses with source documents
@@ -471,6 +534,21 @@ class _MessageBubbleState extends State<_MessageBubble> {
                   if (widget.message.citations.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     _buildCitations(context),
+                  ],
+
+                  /// Artifact Card (AI-generated content)
+                  ///
+                  /// **When shown:**
+                  /// When AI generates code, diagrams, or documents
+                  ///
+                  /// **UX Benefit:**
+                  /// Click to open full artifact viewer
+                  if (!isUser && widget.message.artifact != null) ...[
+                    const SizedBox(height: 12),
+                    ArtifactCard(
+                      artifact: widget.message.artifact!,
+                      onTap: () => _showArtifactViewer(context),
+                    ),
                   ],
 
                   /// Streaming Indicator

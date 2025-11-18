@@ -1,4 +1,8 @@
 import 'package:uuid/uuid.dart';
+import '../widgets/thinking_steps.dart';
+import '../widgets/tool_calling.dart';
+import '../widgets/source_card.dart';
+import 'artifact.dart';
 
 /// 訊息類型枚舉
 /// 定義三種訊息類型：使用者、助理、系統
@@ -38,6 +42,18 @@ class Message {
   /// 是否正在串流中（用於顯示打字動畫）
   final bool isStreaming;
 
+  /// AI 思考步驟（用於顯示推理過程）
+  final List<ThinkingStep>? thinkingSteps;
+
+  /// 工具調用列表（用於顯示工具使用過程）
+  final List<ToolCall>? toolCalls;
+
+  /// 來源引用列表（用於顯示網頁搜尋結果）
+  final List<SourceCitation>? sources;
+
+  /// Artifact（AI 生成的內容）
+  final Artifact? artifact;
+
   /// 私有建構子，強制使用命名建構子
   /// 這是一個好的設計模式，可以提供更清晰的 API
   const Message._({
@@ -47,6 +63,10 @@ class Message {
     required this.timestamp,
     this.citations = const [],
     this.isStreaming = false,
+    this.thinkingSteps,
+    this.toolCalls,
+    this.sources,
+    this.artifact,
   });
 
   /// 工廠建構子：建立使用者訊息
@@ -104,6 +124,10 @@ class Message {
     DateTime? timestamp,
     List<String>? citations,
     bool? isStreaming,
+    List<ThinkingStep>? thinkingSteps,
+    List<ToolCall>? toolCalls,
+    List<SourceCitation>? sources,
+    Artifact? artifact,
   }) {
     return Message._(
       id: id ?? this.id,
@@ -112,11 +136,16 @@ class Message {
       timestamp: timestamp ?? this.timestamp,
       citations: citations ?? this.citations,
       isStreaming: isStreaming ?? this.isStreaming,
+      thinkingSteps: thinkingSteps ?? this.thinkingSteps,
+      toolCalls: toolCalls ?? this.toolCalls,
+      sources: sources ?? this.sources,
+      artifact: artifact ?? this.artifact,
     );
   }
 
   /// JSON 序列化：將物件轉換為 Map
   /// 用於儲存到本地或發送到伺服器
+  /// 注意：thinkingSteps, toolCalls, sources, artifact 是暫時性資料，不需要持久化
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -125,6 +154,7 @@ class Message {
       'timestamp': timestamp.toIso8601String(),
       'citations': citations,
       'isStreaming': isStreaming,
+      // thinkingSteps, toolCalls, sources, artifact 不序列化（僅用於 UI 顯示）
     };
   }
 
