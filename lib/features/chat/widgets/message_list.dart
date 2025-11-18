@@ -255,9 +255,9 @@ class _MessageListState extends ConsumerState<MessageList> {
 /// - tertiaryContainer for AI avatar (semantic color)
 ///
 /// **Flutter Best Practice:**
-/// StatelessWidget because message data is immutable.
-/// Parent (MessageList) manages all state.
-class _MessageBubble extends StatelessWidget {
+/// StatefulWidget to manage hover state for action buttons.
+/// Uses local state for UI interactions while parent manages data.
+class _MessageBubble extends StatefulWidget {
   const _MessageBubble({required this.message});
 
   final Message message;
