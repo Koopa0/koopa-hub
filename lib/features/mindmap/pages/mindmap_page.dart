@@ -93,7 +93,7 @@ class _MindMapPageState extends ConsumerState<MindMapPage> {
             label: const Text('添加子節點'),
           ),
           const SizedBox(width: 12),
-          FilledButton.tonal(
+          FilledButton.tonalIcon(
             onPressed: _selectedNode != null ? _deleteNode : null,
             icon: const Icon(Icons.delete_outline),
             label: const Text('刪除節點'),
