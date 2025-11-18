@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/knowledge_document.dart';
-import '../../chat/providers/chat_provider.dart'; // 用於 apiClient
+import '../../chat/providers/chat_provider.dart'; // 用於 enhancedMockApi
 
 part 'knowledge_provider.g.dart';
 
@@ -112,8 +112,8 @@ class KnowledgeDocuments extends _$KnowledgeDocuments {
   /// 刪除文件
   Future<void> removeDocument(String documentId) async {
     // 呼叫 API 刪除向量資料
-    final apiClient = ref.read(apiClientProvider);
-    await apiClient.deleteDocument(documentId);
+    final api = ref.read(enhancedMockApiProvider);
+    await api.deleteDocument(documentId);
 
     // 1. 從 Hive 刪除
     _box.delete(documentId);
@@ -143,8 +143,8 @@ class KnowledgeDocuments extends _$KnowledgeDocuments {
 
     try {
       // 2. 呼叫 API 進行索引
-      final apiClient = ref.read(apiClientProvider);
-      final result = await apiClient.indexDocument(
+      final api = ref.read(enhancedMockApiProvider);
+      final result = await api.indexDocument(
         path: doc.path,
         size: doc.size,
       );
@@ -170,8 +170,8 @@ class KnowledgeDocuments extends _$KnowledgeDocuments {
   /// 清空所有文件
   Future<void> clearAll() async {
     // 呼叫 API 清空所有向量資料
-    final apiClient = ref.read(apiClientProvider);
-    await apiClient.clearAllDocuments();
+    final api = ref.read(enhancedMockApiProvider);
+    await api.clearAllDocuments();
 
     // 1. 清空 Hive Box
     await _box.clear();

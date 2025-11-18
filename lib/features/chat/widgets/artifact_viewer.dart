@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_highlighter/flutter_highlighter.dart';
 import 'package:flutter_highlighter/themes/github.dart';
-import 'package:flutter_highlighter/themes/github-dark-dimmed.dart';
+import 'package:flutter_highlighter/themes/atom-one-dark.dart';
 import '../models/artifact.dart';
 
 /// Widget to display and interact with AI-generated artifacts
@@ -197,7 +197,7 @@ class _ArtifactViewerState extends State<ArtifactViewer> {
       child: HighlightView(
         widget.artifact.content,
         language: widget.artifact.language ?? 'dart',
-        theme: isDark ? githubDarkDimmedTheme : githubTheme,
+        theme: isDark ? atomOneDarkTheme : githubTheme,
         padding: const EdgeInsets.all(16),
         textStyle: const TextStyle(
           fontFamily: 'monospace',
@@ -265,7 +265,7 @@ class _ArtifactViewerState extends State<ArtifactViewer> {
       child: HighlightView(
         widget.artifact.content,
         language: 'json',
-        theme: isDark ? githubDarkDimmedTheme : githubTheme,
+        theme: isDark ? atomOneDarkTheme : githubTheme,
         padding: const EdgeInsets.all(16),
         textStyle: const TextStyle(
           fontFamily: 'monospace',

@@ -363,4 +363,35 @@ class CounterApp extends ConsumerWidget {
 }
 ''';
   }
+
+  // Knowledge Base API methods
+
+  /// Delete a document from the knowledge base
+  Future<void> deleteDocument(String documentId) async {
+    // Simulate API call
+    await Future.delayed(const Duration(milliseconds: 300));
+    // In a real implementation, this would delete the document from the vector store
+  }
+
+  /// Index a document in the knowledge base
+  Future<Map<String, dynamic>> indexDocument({
+    required String path,
+    required int size,
+  }) async {
+    // Simulate indexing process
+    await Future.delayed(Duration(milliseconds: 1000 + _random.nextInt(2000)));
+
+    // Return mock indexing result
+    return {
+      'summary': 'Document indexed successfully. Contains information about ${path.split('/').last}',
+      'vectorCount': 50 + _random.nextInt(100),
+    };
+  }
+
+  /// Clear all documents from the knowledge base
+  Future<void> clearAllDocuments() async {
+    // Simulate API call
+    await Future.delayed(const Duration(milliseconds: 500));
+    // In a real implementation, this would clear all documents from the vector store
+  }
 }
