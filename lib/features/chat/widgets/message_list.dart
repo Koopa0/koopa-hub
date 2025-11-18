@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_highlighter/flutter_highlighter.dart';
 import 'package:flutter_highlighter/themes/github.dart' show githubTheme;
-import 'package:flutter_highlighter/themes/github-dark.dart' show githubDarkTheme;
+import 'package:flutter_highlighter/themes/dark.dart' show darkTheme;
 import 'package:markdown/markdown.dart' as md;
 
 import '../../../core/constants/design_tokens.dart';
@@ -258,7 +258,7 @@ class _MessageListState extends ConsumerState<MessageList> {
 /// StatefulWidget to manage hover state for action buttons.
 /// Uses local state for UI interactions while parent manages data.
 class _MessageBubble extends StatefulWidget {
-  const _MessageBubble({required this.message});
+  const _MessageBubble({super.key, required this.message});
 
   final Message message;
 
@@ -568,7 +568,11 @@ class _MessageBubbleState extends State<_MessageBubble> {
       /// **Pattern:**
       /// Map element type ('code') to custom builder
       builders: {
-        'code': _CodeBlockBuilder(isDark: isDark),
+        'code': _CodeBlockBuilder(
+          isDark: isDark,
+          codeBlockBg: codeBlockBg,
+          codeHeaderBg: codeHeaderBg,
+        ),
       },
     );
   }
@@ -808,13 +812,13 @@ class _CodeBlockBuilder extends MarkdownElementBuilder {
             ///
             /// **Themes:**
             /// - githubTheme: Light mode (from package)
-            /// - githubDarkTheme: Dark mode (from package)
+            /// - darkTheme: Dark mode (from package)
             child: HighlightView(
               code,
               language: language,
 
               // Adapt theme to app brightness
-              theme: isDark ? githubDarkTheme : githubTheme,
+              theme: isDark ? darkTheme : githubTheme,
 
               // No extra padding (handled by parent)
               padding: EdgeInsets.zero,
