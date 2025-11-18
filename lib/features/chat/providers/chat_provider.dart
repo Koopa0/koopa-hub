@@ -470,17 +470,71 @@ class ChatService extends _$ChatService {
       // ✅ 檢查 provider 是否仍然存在
       if (!ref.mounted) return;
 
+      // 生成友善的錯誤訊息
+      final friendlyError = _getFriendlyErrorMessage(e);
+
       // 更新 AI 訊息為錯誤狀態
       final errorMessage = aiMessage.copyWith(
-        content: '❌ 發送失敗\n\n'
-            '發生錯誤，請稍後再試。\n'
-            '錯誤詳情: ${e.toString()}',
+        content: friendlyError,
         isStreaming: false,
       );
 
       final errorSession = sessionWithAi.updateLastMessage(errorMessage);
       ref.read(chatSessionsProvider.notifier).updateSession(errorSession);
     }
+  }
+
+  /// 生成友善的錯誤訊息
+  String _getFriendlyErrorMessage(Object error) {
+    final errorStr = error.toString().toLowerCase();
+
+    // 網路錯誤
+    if (errorStr.contains('socket') ||
+        errorStr.contains('network') ||
+        errorStr.contains('connection')) {
+      return '❌ 網路連線問題\n\n'
+          '無法連接到伺服器，請檢查您的網路連線。\n\n'
+          '💡 建議：\n'
+          '• 檢查網路連線是否正常\n'
+          '• 稍後再試\n'
+          '• 重新整理頁面';
+    }
+
+    // Timeout 錯誤
+    if (errorStr.contains('timeout')) {
+      return '❌ 請求超時\n\n'
+          '伺服器回應時間過長。\n\n'
+          '💡 建議：\n'
+          '• 請稍後再試\n'
+          '• 嘗試簡化您的問題';
+    }
+
+    // Provider 錯誤
+    if (errorStr.contains('disposed') || errorStr.contains('provider')) {
+      return '❌ 系統狀態錯誤\n\n'
+          '應用程式狀態已重置。\n\n'
+          '💡 建議：\n'
+          '• 重新發送訊息即可\n'
+          '• 如果問題持續，請重新整理頁面';
+    }
+
+    // 權限錯誤
+    if (errorStr.contains('permission') || errorStr.contains('forbidden')) {
+      return '❌ 權限不足\n\n'
+          '您沒有執行此操作的權限。\n\n'
+          '💡 建議：\n'
+          '• 檢查您的帳戶權限\n'
+          '• 聯繫管理員';
+    }
+
+    // 一般錯誤
+    return '❌ 發生錯誤\n\n'
+        '處理您的請求時遇到問題。\n\n'
+        '💡 建議：\n'
+        '• 重新發送訊息\n'
+        '• 嘗試不同的問題\n'
+        '• 如果問題持續，請聯繫支援\n\n'
+        '錯誤詳情：${error.toString()}';
   }
 
   /// 輔助方法：更新訊息

@@ -803,30 +803,106 @@ class _MessageBubbleState extends State<_MessageBubble> {
   ///
   /// **Flutter 3.38:**
   /// CircularProgressIndicator now uses Material 3 animation timing
+  /// 添加漸入動畫效果
   Widget _buildStreamingIndicator(BuildContext context) {
-    return Row(
-      // Don't expand to full width
-      mainAxisSize: MainAxisSize.min,
+    return AnimatedOpacity(
+      opacity: 1.0,
+      duration: const Duration(milliseconds: 300),
+      child: Row(
+        // Don't expand to full width
+        mainAxisSize: MainAxisSize.min,
 
-      children: [
-        // Small spinner
-        SizedBox(
-          width: 12,
-          height: 12,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
+        children: [
+          // 脈衝動畫效果
+          _PulsingDot(color: Theme.of(context).colorScheme.primary),
+          const SizedBox(width: 4),
+          _PulsingDot(
             color: Theme.of(context).colorScheme.primary,
+            delay: 150,
           ),
-        ),
+          const SizedBox(width: 4),
+          _PulsingDot(
+            color: Theme.of(context).colorScheme.primary,
+            delay: 300,
+          ),
 
-        const SizedBox(width: 8),
+          const SizedBox(width: 8),
 
-        // Status text
-        Text(
-          'Generating...',
-          style: Theme.of(context).textTheme.labelSmall,
-        ),
-      ],
+          // Status text with fade-in animation
+          Text(
+            'AI 正在思考...',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 脈衝動畫圓點
+class _PulsingDot extends StatefulWidget {
+  const _PulsingDot({
+    required this.color,
+    this.delay = 0,
+  });
+
+  final Color color;
+  final int delay;
+
+  @override
+  State<_PulsingDot> createState() => _PulsingDotState();
+}
+
+class _PulsingDotState extends State<_PulsingDot>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+
+    _animation = Tween<double>(begin: 0.3, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+
+    // 延遲啟動動畫
+    Future.delayed(Duration(milliseconds: widget.delay), () {
+      if (mounted) {
+        _controller.repeat(reverse: true);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _animation.value,
+          child: Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: widget.color,
+              shape: BoxShape.circle,
+            ),
+          ),
+        );
+      },
     );
   }
 }

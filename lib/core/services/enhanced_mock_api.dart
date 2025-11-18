@@ -184,13 +184,36 @@ class EnhancedMockApi {
   /// Stream text response
   ///
   /// 支援中文和英文的字元級串流
-  /// 將文字分成小塊（2-3個字元）進行串流，以支援中文打字效果
+  /// 根據內容類型調整速度，提供更自然的打字效果
   Stream<ResponseEvent> _streamTextResponse(String message, String model) async* {
     final response = _generateResponse(message, model);
 
-    // 使用字元級串流，每次發送 2-3 個字元
-    // 這樣可以支援中文、英文和混合文字
-    const int chunkSize = 3;
+    // 根據回應內容判斷速度
+    final isChinese = _containsChinese(response);
+    final hasCode = response.contains('```') || response.contains('dart') || response.contains('class');
+
+    // 調整 chunk 大小和延遲
+    int chunkSize;
+    int minDelay;
+    int maxDelay;
+
+    if (hasCode) {
+      // 程式碼：較快速度，較大 chunk
+      chunkSize = 5;
+      minDelay = 20;
+      maxDelay = 40;
+    } else if (isChinese) {
+      // 中文：中等速度
+      chunkSize = 2;
+      minDelay = 40;
+      maxDelay = 70;
+    } else {
+      // 英文：較快速度
+      chunkSize = 4;
+      minDelay = 25;
+      maxDelay = 50;
+    }
+
     String accumulated = '';
 
     for (int i = 0; i < response.length; i += chunkSize) {
@@ -199,8 +222,8 @@ class EnhancedMockApi {
           : i + chunkSize;
       accumulated = response.substring(0, end);
 
-      // 隨機延遲 50-100ms，模擬真實的打字速度
-      await Future.delayed(Duration(milliseconds: 50 + _random.nextInt(50)));
+      // 隨機延遲，模擬真實打字
+      await Future.delayed(Duration(milliseconds: minDelay + _random.nextInt(maxDelay - minDelay)));
       yield ResponseEvent(ResponseEventType.textChunk, accumulated);
     }
 
@@ -208,6 +231,12 @@ class EnhancedMockApi {
     if (accumulated != response) {
       yield ResponseEvent(ResponseEventType.textChunk, response);
     }
+  }
+
+  /// 檢查是否包含中文字符
+  bool _containsChinese(String text) {
+    // 檢查 Unicode 範圍：4E00-9FFF 是中日韓統一表意文字
+    return text.runes.any((rune) => rune >= 0x4E00 && rune <= 0x9FFF);
   }
 
   /// Stream artifact generation
