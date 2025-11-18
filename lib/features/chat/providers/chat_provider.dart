@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../models/chat_session.dart';
 import '../models/message.dart';
 import '../../../core/services/api_client.dart';
-import '../../../core/providers/app_preferences_provider.dart';
 
 // 這行是必須的，用於程式碼生成
 // 執行 'dart run build_runner watch' 來生成程式碼
@@ -12,31 +12,44 @@ part 'chat_provider.g.dart';
 
 /// 聊天會話列表 Provider
 ///
-/// 使用 @riverpod 註解來自動生成 provider
-/// 這是 Riverpod 2.x 的新特性，比手動建立 provider 更簡潔
+/// 使用同步 Notifier 並整合 Hive 持久化
 ///
-/// 優點：
-/// 1. 自動生成 provider
-/// 2. 類型安全
-/// 3. 減少樣板程式碼
-/// 4. 支援程式碼補全
+/// 實作要點：
+/// 1. build 方法同步從 Hive Box 讀取初始狀態
+/// 2. 所有寫入方法同時更新 state 和 Hive Box
+/// 3. 提供更好的性能和可靠性
 @riverpod
 class ChatSessions extends _$ChatSessions {
-  /// build 方法：初始化狀態
+  late Box<ChatSession> _box;
+
+  /// build 方法：同步載入初始狀態
   ///
-  /// 這個方法只會在 provider 第一次被讀取時呼叫
-  /// 返回值就是這個 provider 的初始狀態
+  /// 從 Hive Box 同步讀取所有會話
+  /// 按更新時間排序（最新的在前）
   @override
   List<ChatSession> build() {
-    // TODO: 從本地儲存（Hive）載入會話列表
-    // 現在先返回示範會話，展示新功能
+    _box = Hive.box<ChatSession>('chat_sessions');
 
-    // 創建示範會話，展示 MessageActionBar 和 SourceCitation
+    // 從 Hive 載入會話列表
+    final sessions = _box.values.toList()
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+
+    // 如果是第一次使用，建立示範會話
+    if (sessions.isEmpty) {
+      final demoSession = _createDemoSession();
+      _box.put(demoSession.id, demoSession);
+      return [demoSession];
+    }
+
+    return sessions;
+  }
+
+  /// 建立示範會話（僅在首次使用時）
+  ChatSession _createDemoSession() {
     final demoSession = ChatSession.create(
       title: '歡迎使用 Koopa Hub',
     );
 
-    // 添加示範訊息
     final userMessage1 = Message.user('什麼是 Flutter 的狀態管理？');
     final aiMessage1 = Message.assistant(
       'Flutter 提供多種狀態管理方案，包括：\n\n'
@@ -76,63 +89,76 @@ class ChatSessions extends _$ChatSessions {
       ],
     );
 
-    // 組合所有訊息到會話中
-    var sessionWithMessages = demoSession
+    return demoSession
         .addMessage(userMessage1)
         .addMessage(aiMessage1)
         .addMessage(userMessage2)
         .addMessage(aiMessage2);
-
-    return [sessionWithMessages];
   }
 
   /// 建立新會話
   ///
-  /// 使用 state = ... 來更新狀態
-  /// Riverpod 會自動通知所有監聽者
+  /// 同時更新 state 和 Hive Box
   void createSession({String? title}) {
     final newSession = ChatSession.create(
       title: title ?? '新對話 ${state.length + 1}',
     );
 
-    // 使用擴展運算子 [...] 建立新列表
-    // 這是不可變更新的最佳實踐
+    // 1. 持久化到 Hive
+    _box.put(newSession.id, newSession);
+
+    // 2. 更新 UI 狀態
     state = [newSession, ...state];
   }
 
   /// 刪除會話
   void deleteSession(String sessionId) {
-    // 使用 where 過濾掉要刪除的會話
+    // 1. 從 Hive 刪除
+    _box.delete(sessionId);
+
+    // 2. 更新 UI 狀態
     state = state.where((s) => s.id != sessionId).toList();
   }
 
   /// 更新會話
-  ///
-  /// 使用 map 來更新特定會話
-  /// 這個模式在 Flutter 狀態管理中非常常見
   void updateSession(ChatSession updatedSession) {
+    // 1. 持久化到 Hive
+    _box.put(updatedSession.id, updatedSession);
+
+    // 2. 更新 UI 狀態
     state = state.map((session) {
       return session.id == updatedSession.id ? updatedSession : session;
     }).toList();
   }
 
+  /// 添加訊息到會話
+  void addMessage(String sessionId, Message message) {
+    final session = getSession(sessionId);
+    if (session == null) return;
+
+    final updatedSession = session.addMessage(message);
+    updateSession(updatedSession);
+  }
+
   /// 清除會話的訊息
   void clearSessionMessages(String sessionId) {
-    state = state.map((session) {
-      return session.id == sessionId ? session.clearMessages() : session;
-    }).toList();
+    final session = getSession(sessionId);
+    if (session == null) return;
+
+    final updatedSession = session.clearMessages();
+    updateSession(updatedSession);
   }
 
   /// 切換會話的置頂狀態
   void toggleSessionPin(String sessionId) {
-    state = state.map((session) {
-      return session.id == sessionId ? session.togglePin() : session;
-    }).toList();
+    final session = getSession(sessionId);
+    if (session == null) return;
+
+    final updatedSession = session.togglePin();
+    updateSession(updatedSession);
   }
 
   /// 獲取特定會話
-  ///
-  /// 這不會改變狀態，只是一個查詢方法
   ChatSession? getSession(String sessionId) {
     try {
       return state.firstWhere((s) => s.id == sessionId);

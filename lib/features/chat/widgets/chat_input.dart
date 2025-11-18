@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/chat_provider.dart';
@@ -129,43 +130,61 @@ class _ChatInputState extends ConsumerState<ChatInput> {
   /// - Proper text input action
   /// - Supports assistive technologies
   Widget _buildTextField(ThemeData theme) {
-    return TextField(
-      controller: _controller,
-      focusNode: _focusNode,
+    return KeyboardListener(
+      focusNode: FocusNode(),
+      onKeyEvent: (event) {
+        // 處理 Enter 鍵事件
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.enter) {
+          // Shift + Enter = 換行
+          if (HardwareKeyboard.instance.isShiftPressed) {
+            // 允許換行（不做任何事）
+            return;
+          }
+          // Enter = 送出
+          else {
+            _sendMessage();
+            // 阻止默認行為（換行）
+          }
+        }
+      },
+      child: TextField(
+        controller: _controller,
+        focusNode: _focusNode,
 
-      // Allow multiple lines but limit to 5 for UX
-      // This prevents the input from taking over the screen
-      maxLines: 5,
-      minLines: 1,
+        // Allow multiple lines but limit to 5 for UX
+        // This prevents the input from taking over the screen
+        maxLines: 5,
+        minLines: 1,
 
-      // Text input action
-      // `newline` allows Enter to create new lines
-      // Use `send` to make Enter submit instead
-      textInputAction: TextInputAction.newline,
+        // Text input action
+        // 改為 send 以提供更好的提示
+        textInputAction: TextInputAction.send,
 
-      // Material 3: Updated input decoration
-      decoration: InputDecoration(
-        hintText: 'Type a message...',
+        // Material 3: Updated input decoration
+        decoration: InputDecoration(
+          hintText: 'Type a message... (Enter to send, Shift+Enter for new line)',
 
-        // Material 3: Filled style
-        filled: true,
-        fillColor: theme.colorScheme.surfaceContainerHighest,
+          // Material 3: Filled style
+          filled: true,
+          fillColor: theme.colorScheme.surfaceContainerHighest,
 
-        // Circular border for modern look
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(24),
-          borderSide: BorderSide.none, // No border in Material 3 filled style
+          // Circular border for modern look
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(24),
+            borderSide: BorderSide.none, // No border in Material 3 filled style
+          ),
+
+          // Padding inside the text field
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 12,
+          ),
         ),
 
-        // Padding inside the text field
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 12,
-        ),
+        // Submit on Enter key
+        onSubmitted: (_) => _sendMessage(),
       ),
-
-      // Submit on Enter key
-      onSubmitted: (_) => _sendMessage(),
     );
   }
 

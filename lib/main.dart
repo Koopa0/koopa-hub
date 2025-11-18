@@ -1,13 +1,18 @@
 import 'dart:io' show Platform;
 import 'dart:ui' show PlatformDispatcher;
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'app.dart';
+import 'features/chat/models/chat_session.dart';
+import 'features/chat/models/chat_session_adapter.dart';
+import 'features/chat/models/message_adapter.dart';
+import 'features/knowledge/models/knowledge_document.dart';
+import 'features/knowledge/models/knowledge_document_adapter.dart';
 
 /// 應用程式入口點
 ///
@@ -54,40 +59,46 @@ Future<void> _initializeHive() async {
   // 初始化 Hive（Flutter 版本）
   await Hive.initFlutter();
 
-  // TODO: 註冊 Hive 適配器（用於自訂類型）
-  // Hive.registerAdapter(ChatSessionAdapter());
-  // Hive.registerAdapter(MessageAdapter());
-  // Hive.registerAdapter(KnowledgeDocumentAdapter());
+  // 註冊 Hive 適配器（用於自訂類型）
+  Hive.registerAdapter(ChatSessionAdapter());
+  Hive.registerAdapter(MessageAdapter());
+  Hive.registerAdapter(KnowledgeDocumentAdapter());
 
   // 開啟資料盒子（類似於資料表）
-  // await Hive.openBox('chat_sessions');
-  // await Hive.openBox('knowledge_documents');
-  // await Hive.openBox('settings');
+  await Hive.openBox<ChatSession>('chat_sessions');
+  await Hive.openBox<KnowledgeDocument>('knowledge_documents');
 }
 
 /// 桌面平台初始化
 ///
 /// 設定視窗大小、標題等
 Future<void> _initializeDesktop() async {
-  // 初始化視窗管理器
-  await windowManager.ensureInitialized();
+  try {
+    // 初始化視窗管理器
+    await windowManager.ensureInitialized();
 
-  // 視窗選項
-  const windowOptions = WindowOptions(
-    size: Size(1280, 800), // 預設視窗大小
-    minimumSize: Size(800, 600), // 最小視窗大小
-    center: true, // 置中顯示
-    backgroundColor: Colors.transparent, // 透明背景
-    skipTaskbar: false,
-    title: 'Koopa Hub', // 視窗標題
-    titleBarStyle: TitleBarStyle.normal,
-  );
+    // 視窗選項
+    const windowOptions = WindowOptions(
+      size: Size(1280, 800), // 預設視窗大小
+      minimumSize: Size(800, 600), // 最小視窗大小
+      center: true, // 置中顯示
+      backgroundColor: Colors.transparent, // 透明背景
+      skipTaskbar: false,
+      title: 'Koopa Hub', // 視窗標題
+      titleBarStyle: TitleBarStyle.normal,
+    );
 
-  // 應用視窗選項
-  await windowManager.waitUntilReadyToShow(windowOptions, () async {
-    await windowManager.show();
-    await windowManager.focus();
-  });
+    // 應用視窗選項
+    await windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+  } catch (e) {
+    // 如果 window_manager 初始化失敗（例如在不支持的平台上），
+    // 只記錄錯誤但繼續啟動應用
+    debugPrint('Window manager initialization failed: $e');
+    debugPrint('Continuing without window manager (normal on some platforms)');
+  }
 }
 
 /// 設定全域錯誤處理
@@ -99,15 +110,22 @@ void _setupErrorHandling() {
     // 在開發模式下顯示詳細錯誤
     FlutterError.presentError(details);
 
-    // TODO: 在生產環境中，將錯誤發送到日誌服務
-    // 例如：Sentry, Firebase Crashlytics
-    debugPrint('Flutter Error: ${details.exceptionAsString()}');
+    if (kReleaseMode) {
+      // TODO: 在生產環境中，將錯誤發送到日誌服務
+      // 例如：Sentry.captureException(details.exception, stackTrace: details.stack);
+    } else {
+      debugPrint('Flutter Error: ${details.exceptionAsString()}');
+    }
   };
 
   // 捕獲非 Flutter 錯誤（如 async 錯誤）
   PlatformDispatcher.instance.onError = (error, stack) {
-    debugPrint('Platform Error: $error');
-    debugPrint('Stack Trace: $stack');
+    if (kReleaseMode) {
+      // TODO: Sentry.captureException(error, stackTrace: stack);
+    } else {
+      debugPrint('Platform Error: $error');
+      debugPrint('Stack Trace: $stack');
+    }
     return true; // 表示錯誤已處理
   };
 }
