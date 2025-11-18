@@ -429,7 +429,6 @@ class _MessageBubbleState extends State<_MessageBubble> {
           ],
         ],
       ),
-      ),
     );
   }
 
