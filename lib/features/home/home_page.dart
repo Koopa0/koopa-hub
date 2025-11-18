@@ -10,8 +10,6 @@ import '../knowledge/pages/knowledge_page.dart';
 import '../knowledge/providers/knowledge_provider.dart';
 import '../knowledge/models/knowledge_document.dart';
 import '../settings/pages/settings_page.dart';
-import '../canvas/pages/canvas_page.dart';
-import '../mindmap/pages/mindmap_page.dart';
 import '../arena/pages/arena_page.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/utils/keyboard_shortcuts.dart';
@@ -92,7 +90,7 @@ class HomePage extends ConsumerWidget {
           _Page3Intent: CallbackAction<_Page3Intent>(
             onInvoke: (_) {
               ref.read(appModeProvider.notifier).state =
-                  AppConstants.modeCanvas;
+                  AppConstants.modeArena;
               return null;
             },
           ),
@@ -181,16 +179,6 @@ class _ToolBar extends ConsumerWidget {
           ),
 
           _ModeButton(
-            icon: Icons.account_tree_outlined,
-            selectedIcon: Icons.account_tree,
-            mode: AppConstants.modeMindMap,
-            label: 'Mind Map',
-            isSelected: currentMode == AppConstants.modeMindMap,
-            onTap: () => ref.read(appModeProvider.notifier).state =
-                AppConstants.modeMindMap,
-          ),
-
-          _ModeButton(
             icon: Icons.library_books_outlined,
             selectedIcon: Icons.library_books,
             mode: AppConstants.modeKnowledge,
@@ -198,16 +186,6 @@ class _ToolBar extends ConsumerWidget {
             isSelected: currentMode == AppConstants.modeKnowledge,
             onTap: () => ref.read(appModeProvider.notifier).state =
                 AppConstants.modeKnowledge,
-          ),
-
-          _ModeButton(
-            icon: Icons.edit_note_outlined,
-            selectedIcon: Icons.edit_note,
-            mode: AppConstants.modeCanvas,
-            label: 'Canvas',
-            isSelected: currentMode == AppConstants.modeCanvas,
-            onTap: () => ref.read(appModeProvider.notifier).state =
-                AppConstants.modeCanvas,
           ),
 
           _ModeButton(
@@ -307,8 +285,7 @@ class _CollapsibleSidebar extends ConsumerWidget {
 
     // Only show sidebar in certain modes
     final showSidebar = currentMode == AppConstants.modeChat ||
-        currentMode == AppConstants.modeKnowledge ||
-        currentMode == AppConstants.modeCanvas;
+        currentMode == AppConstants.modeKnowledge;
 
     if (!showSidebar) return const SizedBox.shrink();
 
@@ -858,10 +835,8 @@ class _CenterStage extends StatelessWidget {
     return switch (mode) {
       AppConstants.modeHome => const DashboardView(key: ValueKey('home')),
       AppConstants.modeChat => const ChatPage(key: ValueKey('chat')),
-      AppConstants.modeMindMap => const MindMapPage(key: ValueKey('mindmap')),
       AppConstants.modeKnowledge =>
         const KnowledgePage(key: ValueKey('knowledge')),
-      AppConstants.modeCanvas => const CanvasPage(key: ValueKey('canvas')),
       AppConstants.modeArena => const ArenaPage(key: ValueKey('arena')),
       'settings' => const SettingsPage(key: ValueKey('settings')),
       _ => _ComingSoonView(mode: mode, key: ValueKey(mode)),
