@@ -38,7 +38,8 @@ enum ThinkingStepStatus {
 
 /// Widget to display AI thinking process
 /// Inspired by Claude and Perplexity's thinking indicators
-class ThinkingStepsWidget extends StatelessWidget {
+/// 添加漸入動畫效果
+class ThinkingStepsWidget extends StatefulWidget {
   const ThinkingStepsWidget({
     super.key,
     required this.steps,
@@ -49,12 +50,43 @@ class ThinkingStepsWidget extends StatelessWidget {
   final bool isExpanded;
 
   @override
+  State<ThinkingStepsWidget> createState() => _ThinkingStepsWidgetState();
+}
+
+class _ThinkingStepsWidgetState extends State<ThinkingStepsWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeIn,
+    );
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    if (steps.isEmpty) return const SizedBox.shrink();
+    if (widget.steps.isEmpty) return const SizedBox.shrink();
 
-    return Container(
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
@@ -101,24 +133,25 @@ class ThinkingStepsWidget extends StatelessWidget {
             ),
           ),
 
-          if (isExpanded) ...[
+          if (widget.isExpanded) ...[
             const Divider(height: 1),
             // Steps list
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: steps.map((step) => _buildStep(context, step)).toList(),
+                children: widget.steps.map((step) => _buildStep(context, step)).toList(),
               ),
             ),
           ],
         ],
       ),
+      ),
     );
   }
 
   bool get _hasActiveStep =>
-      steps.any((s) => s.status == ThinkingStepStatus.inProgress);
+      widget.steps.any((s) => s.status == ThinkingStepStatus.inProgress);
 
   Widget _buildStep(BuildContext context, ThinkingStep step) {
     final theme = Theme.of(context);
