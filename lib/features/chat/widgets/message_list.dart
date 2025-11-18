@@ -384,23 +384,16 @@ class _MessageBubbleState extends State<_MessageBubble> {
   }
 
   /// 顯示 Artifact 檢視器
+  ///
+  /// 使用側邊欄顯示 Artifact（類似 Claude Web）
+  /// 而非 Dialog 彈窗
   void _showArtifactViewer(BuildContext context) {
     if (widget.message.artifact == null) return;
 
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        child: Container(
-          width: 800,
-          height: 600,
-          padding: const EdgeInsets.all(0),
-          child: ArtifactViewer(
-            artifact: widget.message.artifact!,
-            onClose: () => Navigator.pop(context),
-          ),
-        ),
-      ),
-    );
+    // 使用 provider 在側邊欄顯示 Artifact
+    ref.read(artifactSidebarProvider.notifier).showArtifact(
+          widget.message.artifact!,
+        );
   }
 
   @override

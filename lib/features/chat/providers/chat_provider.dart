@@ -229,6 +229,32 @@ EnhancedMockApi enhancedMockApi(Ref ref) {
   return EnhancedMockApi();
 }
 
+/// Artifact 側邊欄狀態 Provider
+///
+/// 管理側邊欄的顯示/隱藏和當前顯示的 Artifact
+@riverpod
+class ArtifactSidebar extends _$ArtifactSidebar {
+  @override
+  Artifact? build() {
+    return null;
+  }
+
+  /// 顯示 Artifact
+  void showArtifact(Artifact artifact) {
+    state = artifact;
+  }
+
+  /// 隱藏側邊欄
+  void hide() {
+    state = null;
+  }
+
+  /// 切換顯示狀態
+  void toggle() {
+    state = null;
+  }
+}
+
 /// 聊天服務 Provider（用於發送訊息）
 ///
 /// 使用 Mock API 提供流式響應
