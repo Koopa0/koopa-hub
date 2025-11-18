@@ -10,7 +10,12 @@ import '../knowledge/pages/knowledge_page.dart';
 import '../knowledge/providers/knowledge_provider.dart';
 import '../knowledge/models/knowledge_document.dart';
 import '../settings/pages/settings_page.dart';
+import '../canvas/pages/canvas_page.dart';
+import '../mindmap/pages/mindmap_page.dart';
+import '../arena/pages/arena_page.dart';
 import '../../core/utils/responsive.dart';
+import '../../core/utils/keyboard_shortcuts.dart';
+import '../../core/widgets/search_dialog.dart';
 import '../../core/constants/design_tokens.dart';
 
 /// Current app mode provider
@@ -33,20 +38,81 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentMode = ref.watch(appModeProvider);
 
-    return Scaffold(
-      body: Row(
-        children: [
-          // Left: Tool Selector Bar
-          const _ToolBar(),
-
-          // Middle: Collapsible Sidebar
-          const _CollapsibleSidebar(),
-
-          // Right: Center Stage (main content)
-          Expanded(
-            child: _CenterStage(mode: currentMode),
+    // 整合鍵盤快捷鍵
+    return Shortcuts(
+      shortcuts: {
+        AppShortcuts.newChat: const _NewChatIntent(),
+        AppShortcuts.search: const _SearchIntent(),
+        AppShortcuts.settings: const _SettingsIntent(),
+        AppShortcuts.help: const _HelpIntent(),
+        AppShortcuts.page1: const _Page1Intent(),
+        AppShortcuts.page2: const _Page2Intent(),
+        AppShortcuts.page3: const _Page3Intent(),
+      },
+      child: Actions(
+        actions: {
+          _NewChatIntent: CallbackAction<_NewChatIntent>(
+            onInvoke: (_) {
+              ref.read(chatSessionsProvider.notifier).createSession();
+              ref.read(appModeProvider.notifier).state = AppConstants.modeChat;
+              return null;
+            },
           ),
-        ],
+          _SearchIntent: CallbackAction<_SearchIntent>(
+            onInvoke: (_) {
+              SearchDialog.show(context);
+              return null;
+            },
+          ),
+          _SettingsIntent: CallbackAction<_SettingsIntent>(
+            onInvoke: (_) {
+              ref.read(appModeProvider.notifier).state = 'settings';
+              return null;
+            },
+          ),
+          _HelpIntent: CallbackAction<_HelpIntent>(
+            onInvoke: (_) {
+              ShortcutsHelpDialog.show(context);
+              return null;
+            },
+          ),
+          _Page1Intent: CallbackAction<_Page1Intent>(
+            onInvoke: (_) {
+              ref.read(appModeProvider.notifier).state = AppConstants.modeChat;
+              return null;
+            },
+          ),
+          _Page2Intent: CallbackAction<_Page2Intent>(
+            onInvoke: (_) {
+              ref.read(appModeProvider.notifier).state =
+                  AppConstants.modeKnowledge;
+              return null;
+            },
+          ),
+          _Page3Intent: CallbackAction<_Page3Intent>(
+            onInvoke: (_) {
+              ref.read(appModeProvider.notifier).state =
+                  AppConstants.modeCanvas;
+              return null;
+            },
+          ),
+        },
+        child: Scaffold(
+          body: Row(
+            children: [
+              // Left: Tool Selector Bar
+              const _ToolBar(),
+
+              // Middle: Collapsible Sidebar
+              const _CollapsibleSidebar(),
+
+              // Right: Center Stage (main content)
+              Expanded(
+                child: _CenterStage(mode: currentMode),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -792,8 +858,11 @@ class _CenterStage extends StatelessWidget {
     return switch (mode) {
       AppConstants.modeHome => const DashboardView(key: ValueKey('home')),
       AppConstants.modeChat => const ChatPage(key: ValueKey('chat')),
+      AppConstants.modeMindMap => const MindMapPage(key: ValueKey('mindmap')),
       AppConstants.modeKnowledge =>
         const KnowledgePage(key: ValueKey('knowledge')),
+      AppConstants.modeCanvas => const CanvasPage(key: ValueKey('canvas')),
+      AppConstants.modeArena => const ArenaPage(key: ValueKey('arena')),
       'settings' => const SettingsPage(key: ValueKey('settings')),
       _ => _ComingSoonView(mode: mode, key: ValueKey(mode)),
     };
@@ -848,4 +917,33 @@ class _ComingSoonView extends StatelessWidget {
       _ => 'Unknown Mode',
     };
   }
+}
+
+// 鍵盤快捷鍵 Intents
+class _NewChatIntent extends Intent {
+  const _NewChatIntent();
+}
+
+class _SearchIntent extends Intent {
+  const _SearchIntent();
+}
+
+class _SettingsIntent extends Intent {
+  const _SettingsIntent();
+}
+
+class _HelpIntent extends Intent {
+  const _HelpIntent();
+}
+
+class _Page1Intent extends Intent {
+  const _Page1Intent();
+}
+
+class _Page2Intent extends Intent {
+  const _Page2Intent();
+}
+
+class _Page3Intent extends Intent {
+  const _Page3Intent();
 }

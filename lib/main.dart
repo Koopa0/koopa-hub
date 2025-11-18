@@ -73,25 +73,32 @@ Future<void> _initializeHive() async {
 ///
 /// 設定視窗大小、標題等
 Future<void> _initializeDesktop() async {
-  // 初始化視窗管理器
-  await windowManager.ensureInitialized();
+  try {
+    // 初始化視窗管理器
+    await windowManager.ensureInitialized();
 
-  // 視窗選項
-  const windowOptions = WindowOptions(
-    size: Size(1280, 800), // 預設視窗大小
-    minimumSize: Size(800, 600), // 最小視窗大小
-    center: true, // 置中顯示
-    backgroundColor: Colors.transparent, // 透明背景
-    skipTaskbar: false,
-    title: 'Koopa Hub', // 視窗標題
-    titleBarStyle: TitleBarStyle.normal,
-  );
+    // 視窗選項
+    const windowOptions = WindowOptions(
+      size: Size(1280, 800), // 預設視窗大小
+      minimumSize: Size(800, 600), // 最小視窗大小
+      center: true, // 置中顯示
+      backgroundColor: Colors.transparent, // 透明背景
+      skipTaskbar: false,
+      title: 'Koopa Hub', // 視窗標題
+      titleBarStyle: TitleBarStyle.normal,
+    );
 
-  // 應用視窗選項
-  await windowManager.waitUntilReadyToShow(windowOptions, () async {
-    await windowManager.show();
-    await windowManager.focus();
-  });
+    // 應用視窗選項
+    await windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+  } catch (e) {
+    // 如果 window_manager 初始化失敗（例如在不支持的平台上），
+    // 只記錄錯誤但繼續啟動應用
+    debugPrint('Window manager initialization failed: $e');
+    debugPrint('Continuing without window manager (normal on some platforms)');
+  }
 }
 
 /// 設定全域錯誤處理

@@ -59,7 +59,6 @@ class _MessageListState extends ConsumerState<MessageList> {
   /// **Important:** Must be disposed to prevent memory leaks
   /// ScrollController holds native platform resources
   final ScrollController _scrollController = ScrollController();
-  List<Message> _previousMessages = [];
 
   @override
   void dispose() {
@@ -74,30 +73,6 @@ class _MessageListState extends ConsumerState<MessageList> {
     /// Always dispose controllers in reverse order of creation
     _scrollController.dispose();
     super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(MessageList oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    // 只在訊息數量變化時滾動 - 避免在每次 build 時都添加 callback
-    final messages = ref.read(currentMessagesProvider);
-    if (messages.length != _previousMessages.length) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollToBottom();
-      });
-      _previousMessages = List.from(messages);
-    }
-  }
-
-  void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    }
   }
 
   @override
@@ -270,45 +245,138 @@ class _MessageBubbleState extends State<_MessageBubble> {
   bool _isHovered = false;
 
   void _handleAction(MessageAction action) {
-    // TODO: 實作各個操作
     switch (action) {
       case MessageAction.copy:
         // 複製功能已在 MessageActionBar 中處理
         break;
+
       case MessageAction.edit:
-        // TODO: 實作編輯功能
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('編輯功能開發中'),
-              duration: Duration(seconds: 1),
-            ),
-          );
-        }
+        _handleEdit();
         break;
+
       case MessageAction.regenerate:
-        // TODO: 實作重新生成功能
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('重新生成功能開發中'),
-              duration: Duration(seconds: 1),
-            ),
-          );
-        }
+        _handleRegenerate();
         break;
+
       case MessageAction.delete:
-        // TODO: 實作刪除功能
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('刪除功能開發中'),
-              duration: Duration(seconds: 1),
-            ),
-          );
-        }
+        _handleDelete();
         break;
     }
+  }
+
+  /// 處理編輯訊息
+  void _handleEdit() {
+    if (widget.message.type != MessageType.user) return;
+
+    // 顯示編輯對話框
+    showDialog(
+      context: context,
+      builder: (context) => _EditMessageDialog(
+        initialContent: widget.message.content,
+        onSave: (newContent) {
+          // 更新訊息內容
+          final updatedMessage = widget.message.copyWith(content: newContent);
+          _updateMessageInSession(updatedMessage);
+        },
+      ),
+    );
+  }
+
+  /// 處理重新生成
+  void _handleRegenerate() async {
+    if (widget.message.type != MessageType.assistant) return;
+
+    final ref = ProviderScope.containerOf(context).read;
+    final sessionId = ref(currentSessionIdProvider);
+    if (sessionId == null) return;
+
+    final session = ref(chatSessionsProvider.notifier).getSession(sessionId);
+    if (session == null) return;
+
+    // 找到這條 AI 訊息之前的使用者訊息
+    final messageIndex = session.messages.indexOf(widget.message);
+    if (messageIndex <= 0) return;
+
+    String? userMessageContent;
+    for (int i = messageIndex - 1; i >= 0; i--) {
+      if (session.messages[i].type == MessageType.user) {
+        userMessageContent = session.messages[i].content;
+        break;
+      }
+    }
+
+    if (userMessageContent == null) return;
+
+    // 刪除當前 AI 訊息
+    final updatedMessages = session.messages
+        .where((m) => m.id != widget.message.id)
+        .toList();
+    ref(chatSessionsProvider.notifier).updateSession(
+      session.copyWith(messages: updatedMessages),
+    );
+
+    // 重新發送請求
+    await ref(chatServiceProvider.notifier).sendMessage(userMessageContent);
+  }
+
+  /// 處理刪除訊息
+  void _handleDelete() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('刪除訊息'),
+        content: const Text('確定要刪除這條訊息嗎？此操作無法復原。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteMessageFromSession();
+            },
+            child: const Text('刪除'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 更新會話中的訊息
+  void _updateMessageInSession(Message updatedMessage) {
+    final ref = ProviderScope.containerOf(context).read;
+    final sessionId = ref(currentSessionIdProvider);
+    if (sessionId == null) return;
+
+    final session = ref(chatSessionsProvider.notifier).getSession(sessionId);
+    if (session == null) return;
+
+    final updatedMessages = session.messages.map((m) {
+      return m.id == updatedMessage.id ? updatedMessage : m;
+    }).toList();
+
+    ref(chatSessionsProvider.notifier).updateSession(
+      session.copyWith(messages: updatedMessages),
+    );
+  }
+
+  /// 從會話中刪除訊息
+  void _deleteMessageFromSession() {
+    final ref = ProviderScope.containerOf(context).read;
+    final sessionId = ref(currentSessionIdProvider);
+    if (sessionId == null) return;
+
+    final session = ref(chatSessionsProvider.notifier).getSession(sessionId);
+    if (session == null) return;
+
+    final updatedMessages = session.messages
+        .where((m) => m.id != widget.message.id)
+        .toList();
+
+    ref(chatSessionsProvider.notifier).updateSession(
+      session.copyWith(messages: updatedMessages),
+    );
   }
 
   @override
@@ -832,6 +900,77 @@ class _CodeBlockBuilder extends MarkdownElementBuilder {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 編輯訊息對話框
+///
+/// 允許用戶編輯已發送的訊息
+class _EditMessageDialog extends StatefulWidget {
+  const _EditMessageDialog({
+    required this.initialContent,
+    required this.onSave,
+  });
+
+  final String initialContent;
+  final void Function(String) onSave;
+
+  @override
+  State<_EditMessageDialog> createState() => _EditMessageDialogState();
+}
+
+class _EditMessageDialogState extends State<_EditMessageDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialContent);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AlertDialog(
+      title: const Text('編輯訊息'),
+      content: SizedBox(
+        width: 500,
+        child: TextField(
+          controller: _controller,
+          maxLines: 5,
+          decoration: InputDecoration(
+            hintText: '輸入訊息內容...',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          autofocus: true,
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('取消'),
+        ),
+        FilledButton(
+          onPressed: () {
+            final newContent = _controller.text.trim();
+            if (newContent.isNotEmpty) {
+              widget.onSave(newContent);
+              Navigator.pop(context);
+            }
+          },
+          child: const Text('保存'),
+        ),
+      ],
     );
   }
 }
