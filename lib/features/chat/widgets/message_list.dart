@@ -391,7 +391,8 @@ class _MessageBubbleState extends State<_MessageBubble> {
     if (widget.message.artifact == null) return;
 
     // 使用 provider 在側邊欄顯示 Artifact
-    ref.read(artifactSidebarProvider.notifier).showArtifact(
+    final ref = ProviderScope.containerOf(context).read;
+    ref(artifactSidebarProvider.notifier).showArtifact(
           widget.message.artifact!,
         );
   }
