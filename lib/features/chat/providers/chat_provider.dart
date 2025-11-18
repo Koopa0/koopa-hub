@@ -4,7 +4,11 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/chat_session.dart';
 import '../models/message.dart';
-import '../../../core/services/api_client.dart';
+import '../../../core/services/enhanced_mock_api.dart';
+import '../widgets/thinking_steps.dart';
+import '../widgets/tool_calling.dart';
+import '../widgets/source_card.dart';
+import '../models/artifact.dart';
 
 // 這行是必須的，用於程式碼生成
 // 執行 'dart run build_runner watch' 來生成程式碼
@@ -219,11 +223,10 @@ List<Message> currentMessages(Ref ref) {
   return session?.messages ?? [];
 }
 
-/// API Client Provider
+/// Enhanced Mock API Provider
 @riverpod
-ApiClient apiClient(Ref ref) {
-  // 使用預設的 baseUrl
-  return ApiClient();
+EnhancedMockApi enhancedMockApi(Ref ref) {
+  return EnhancedMockApi();
 }
 
 /// 聊天服務 Provider（用於發送訊息）
@@ -236,14 +239,17 @@ class ChatService extends _$ChatService {
     // 初始化聊天服務
   }
 
-  /// 發送訊息
+  /// 發送訊息（使用 Enhanced Mock API）
   ///
-  /// 這是一個異步方法，會：
+  /// 處理多種事件類型：
   /// 1. 添加使用者訊息
-  /// 2. 呼叫 API
-  /// 3. 接收串流回應（打字效果）
-  /// 4. 更新 AI 訊息
-  /// 5. 處理錯誤並提供用戶反饋
+  /// 2. 處理思考步驟（thinkingStep）
+  /// 3. 處理工具調用（toolCall）
+  /// 4. 處理搜尋進度（searchProgress）
+  /// 5. 處理來源引用（sources）
+  /// 6. 處理文字串流（textChunk）
+  /// 7. 處理 Artifacts（artifact）
+  /// 8. 完成標記（complete）
   Future<void> sendMessage(String content) async {
     // 驗證輸入
     if (content.trim().isEmpty) {
@@ -277,57 +283,149 @@ class ChatService extends _$ChatService {
     ref.read(chatSessionsProvider.notifier).updateSession(sessionWithAi);
 
     try {
-      // 3. 呼叫 API 並處理串流回應
-      final apiClient = ref.read(apiClientProvider);
+      // 3. 呼叫 Enhanced Mock API
+      final api = ref.read(enhancedMockApiProvider);
 
-      final stream = apiClient.sendChatMessage(
+      final stream = api.sendChatMessage(
         message: content,
         sessionId: sessionId,
         model: session.selectedModel.name,
       );
 
-      // 4. 處理流式響應，實現打字效果
-      await for (final chunk in stream) {
-        final streamingMessage = aiMessage.copyWith(
-          content: chunk,
-          isStreaming: true,
-        );
+      // 暫存的資料，用於累積事件
+      List<ThinkingStep>? thinkingSteps;
+      List<ToolCall>? toolCalls;
+      List<SourceCitation>? sources;
+      Artifact? artifact;
+      String textContent = '';
 
-        // 更新當前會話
-        final currentSession =
-            ref.read(chatSessionsProvider.notifier).getSession(sessionId);
-        if (currentSession == null) break;
-
-        final updatedStreamSession =
-            currentSession.updateLastMessage(streamingMessage);
-        ref.read(chatSessionsProvider.notifier).updateSession(
-              updatedStreamSession,
+      // 4. 處理事件流
+      await for (final event in stream) {
+        switch (event.type) {
+          case ResponseEventType.thinkingStep:
+            // 更新思考步驟
+            thinkingSteps = List<ThinkingStep>.from(event.data);
+            _updateMessage(
+              sessionId,
+              aiMessage,
+              textContent,
+              thinkingSteps: thinkingSteps,
+              toolCalls: toolCalls,
+              sources: sources,
+              artifact: artifact,
             );
-      }
+            break;
 
-      // 5. 標記為完成
-      final completedMessage = aiMessage.copyWith(
-        content: sessionWithAi.messages.last.content,
-        isStreaming: false,
-      );
+          case ResponseEventType.toolCall:
+            // 添加或更新工具調用
+            final toolCall = event.data as ToolCall;
+            if (toolCalls == null) {
+              toolCalls = [toolCall];
+            } else {
+              // 查找並更新或添加
+              final index =
+                  toolCalls.indexWhere((tc) => tc.toolName == toolCall.toolName);
+              if (index >= 0) {
+                toolCalls[index] = toolCall;
+              } else {
+                toolCalls.add(toolCall);
+              }
+            }
+            _updateMessage(
+              sessionId,
+              aiMessage,
+              textContent,
+              thinkingSteps: thinkingSteps,
+              toolCalls: toolCalls,
+              sources: sources,
+              artifact: artifact,
+            );
+            break;
 
-      final finalSession =
-          ref.read(chatSessionsProvider.notifier).getSession(sessionId);
-      if (finalSession != null) {
-        final completedSession = finalSession.updateLastMessage(
-          completedMessage,
-        );
-        ref.read(chatSessionsProvider.notifier).updateSession(completedSession);
+          case ResponseEventType.searchProgress:
+            // 搜尋進度可以顯示在文字中（可選）
+            // 或者可以忽略，因為有 toolCall 事件
+            break;
 
-        // 6. 如果是第一條訊息，自動更新標題
-        if (session.messages.isEmpty) {
-          final title = content.length > 30
-              ? '${content.substring(0, 30)}...'
-              : content;
-          final sessionWithTitle = completedSession.updateTitle(title);
-          ref
-              .read(chatSessionsProvider.notifier)
-              .updateSession(sessionWithTitle);
+          case ResponseEventType.sources:
+            // 添加來源引用
+            sources = List<SourceCitation>.from(event.data);
+            _updateMessage(
+              sessionId,
+              aiMessage,
+              textContent,
+              thinkingSteps: thinkingSteps,
+              toolCalls: toolCalls,
+              sources: sources,
+              artifact: artifact,
+            );
+            break;
+
+          case ResponseEventType.textChunk:
+            // 更新文字內容
+            textContent = event.data as String;
+            _updateMessage(
+              sessionId,
+              aiMessage,
+              textContent,
+              thinkingSteps: thinkingSteps,
+              toolCalls: toolCalls,
+              sources: sources,
+              artifact: artifact,
+            );
+            break;
+
+          case ResponseEventType.artifact:
+            // 添加 Artifact
+            final artifactData = event.data as Map<String, dynamic>;
+            artifact = Artifact(
+              id: aiMessage.id + '_artifact',
+              title: artifactData['title'] as String,
+              type: ArtifactType.values.firstWhere(
+                (e) => e.name == artifactData['type'],
+                orElse: () => ArtifactType.code,
+              ),
+              content: artifactData['content'] as String,
+              language: artifactData['language'] as String?,
+              createdAt: DateTime.now(),
+            );
+            _updateMessage(
+              sessionId,
+              aiMessage,
+              textContent,
+              thinkingSteps: thinkingSteps,
+              toolCalls: toolCalls,
+              sources: sources,
+              artifact: artifact,
+            );
+            break;
+
+          case ResponseEventType.complete:
+            // 標記為完成
+            final completedMessage = aiMessage.copyWith(
+              content: textContent,
+              isStreaming: false,
+              thinkingSteps: thinkingSteps,
+              toolCalls: toolCalls,
+              sources: sources,
+              artifact: artifact,
+            );
+
+            final finalSession = ref.read(chatSessionsProvider.notifier).getSession(sessionId);
+            if (finalSession != null) {
+              final completedSession = finalSession.updateLastMessage(completedMessage);
+              ref.read(chatSessionsProvider.notifier).updateSession(completedSession);
+
+              // 如果是第一條訊息，自動更新標題
+              if (session.messages.isEmpty) {
+                final title = content.length > 30
+                    ? '${content.substring(0, 30)}...'
+                    : content;
+                final sessionWithTitle = completedSession.updateTitle(title);
+                ref.read(chatSessionsProvider.notifier).updateSession(sessionWithTitle);
+              }
+            }
+            break;
         }
       }
     } catch (e, stackTrace) {
@@ -345,5 +443,35 @@ class ChatService extends _$ChatService {
       final errorSession = sessionWithAi.updateLastMessage(errorMessage);
       ref.read(chatSessionsProvider.notifier).updateSession(errorSession);
     }
+  }
+
+  /// 輔助方法：更新訊息
+  void _updateMessage(
+    String sessionId,
+    Message aiMessage,
+    String content, {
+    List<ThinkingStep>? thinkingSteps,
+    List<ToolCall>? toolCalls,
+    List<SourceCitation>? sources,
+    Artifact? artifact,
+  }) {
+    final streamingMessage = aiMessage.copyWith(
+      content: content,
+      isStreaming: true,
+      thinkingSteps: thinkingSteps,
+      toolCalls: toolCalls,
+      sources: sources,
+      artifact: artifact,
+    );
+
+    final currentSession =
+        ref.read(chatSessionsProvider.notifier).getSession(sessionId);
+    if (currentSession == null) return;
+
+    final updatedStreamSession =
+        currentSession.updateLastMessage(streamingMessage);
+    ref.read(chatSessionsProvider.notifier).updateSession(
+          updatedStreamSession,
+        );
   }
 }
