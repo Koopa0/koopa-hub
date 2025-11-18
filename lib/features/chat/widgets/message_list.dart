@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_highlighter/flutter_highlighter.dart';
-import 'package:flutter_highlighter/themes/github.dart';
-import 'package:flutter_highlighter/themes/github-dark.dart';
+import 'package:flutter_highlighter/themes/github.dart' show githubTheme;
+import 'package:flutter_highlighter/themes/github-dark.dart' show githubDarkTheme;
 import 'package:markdown/markdown.dart' as md;
 
 import '../providers/chat_provider.dart';
