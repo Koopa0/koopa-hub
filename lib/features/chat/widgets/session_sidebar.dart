@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../models/chat_session.dart';
 import '../providers/chat_provider.dart';
 import '../../../core/constants/app_constants.dart';
 
@@ -241,7 +242,13 @@ class _SessionTile extends StatelessWidget {
     required this.onTogglePin,
   });
 
-  final dynamic session; // ChatSession (using dynamic to avoid import)
+  /// Chat session data
+  ///
+  /// **Type Safety (Dart 3.10):**
+  /// Using explicit ChatSession type instead of dynamic
+  /// provides compile-time type checking and better IDE support
+  final ChatSession session;
+
   final bool isSelected;
   final VoidCallback onTap;
   final VoidCallback onDelete;

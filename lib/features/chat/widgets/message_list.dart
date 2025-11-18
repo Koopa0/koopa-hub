@@ -77,37 +77,42 @@ class _MessageListState extends ConsumerState<MessageList> {
     // Watch messages - rebuilds when message list changes
     final messages = ref.watch(currentMessagesProvider);
 
-    /// Auto-scroll to bottom after build
+    /// Auto-scroll to bottom when messages change
     ///
-    /// **WidgetsBinding.instance.addPostFrameCallback:**
-    /// This schedules a callback to run after the current frame is rendered.
-    /// Perfect for operations that need the final layout (like scroll position).
+    /// **Riverpod Pattern - ref.listen:**
+    /// Only executes callback when the provider value actually changes.
+    /// More efficient than addPostFrameCallback in every build.
     ///
-    /// **Why Post-Frame:**
-    /// - build() cannot modify state or scroll position directly
-    /// - Need to wait for ListView to finish layout
-    /// - Ensures smooth animation without jank
+    /// **Why This Pattern:**
+    /// - Only scrolls when messages list changes (not on every rebuild)
+    /// - Prevents unnecessary callback registrations
+    /// - Better performance for complex UIs
     ///
     /// **Flutter 3.38:**
     /// Frame callbacks are now more efficient with improved scheduling
     ///
-    /// **Alternative Pattern (More Advanced):**
-    /// Could use `SchedulerBinding.instance.addPostFrameCallback` for
-    /// one-time callbacks, but this pattern is simpler for repeated updates
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Check if controller is attached to a scroll view
-      // Prevents crashes during widget disposal or initial build
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          // maxScrollExtent: Bottom of scrollable area
-          _scrollController.position.maxScrollExtent,
+    /// **Performance Benefit:**
+    /// Previous pattern called addPostFrameCallback on every build.
+    /// This pattern only triggers when messages actually change.
+    ref.listen(currentMessagesProvider, (previous, next) {
+      // Only scroll if message count changed (new message added)
+      if (previous?.length != next.length) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          // Check if controller is attached to a scroll view
+          // Prevents crashes during widget disposal or initial build
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              // maxScrollExtent: Bottom of scrollable area
+              _scrollController.position.maxScrollExtent,
 
-          // Smooth animation duration
-          duration: const Duration(milliseconds: 300),
+              // Smooth animation duration
+              duration: const Duration(milliseconds: 300),
 
-          // easeOut: Fast start, slow end (feels natural)
-          curve: Curves.easeOut,
-        );
+              // easeOut: Fast start, slow end (feels natural)
+              curve: Curves.easeOut,
+            );
+          }
+        });
       }
     });
 
