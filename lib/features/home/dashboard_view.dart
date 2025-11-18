@@ -118,20 +118,10 @@ class DashboardView extends ConsumerWidget {
               },
             ),
             _QuickActionCard(
-              icon: Icons.edit_note_outlined,
-              title: 'Open Canvas',
-              subtitle: 'Create content',
-              color: theme.colorScheme.tertiaryContainer,
-              onTap: () {
-                ref.read(appModeProvider.notifier).state =
-                    AppConstants.modeCanvas;
-              },
-            ),
-            _QuickActionCard(
               icon: Icons.compare_outlined,
               title: 'Model Arena',
               subtitle: 'Compare AI models',
-              color: theme.colorScheme.errorContainer,
+              color: theme.colorScheme.tertiaryContainer,
               onTap: () {
                 ref.read(appModeProvider.notifier).state =
                     AppConstants.modeArena;
