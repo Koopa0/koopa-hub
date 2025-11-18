@@ -6,15 +6,32 @@ import '../../../core/constants/app_constants.dart';
 
 part 'settings_provider.g.dart';
 
+/// 訊息顯示模式
+enum MessageDisplayMode {
+  bubble,   // 氣泡模式（預設）- 適合短對話
+  document, // 文檔模式 - 適合長文閱讀
+}
+
+/// 字體大小
+enum FontSize {
+  small,
+  medium,
+  large,
+}
+
 /// 應用設定模型
 ///
-/// 使用 record type（Dart 3.0+ 特性）來定義設定
-/// Record 是輕量級的不可變資料結構
+/// 合併了 SettingsProvider 和 AppPreferencesProvider 的功能
+/// 統一管理所有使用者設定並持久化到 SharedPreferences
 typedef AppSettings = ({
   String serverUrl,
   String? geminiApiKey,
   ThemeMode themeMode,
   String selectedModel,
+  // 從 AppPreferencesProvider 合併的欄位
+  MessageDisplayMode messageDisplayMode,
+  FontSize fontSize,
+  String locale,
 });
 
 /// 設定 Provider
@@ -56,11 +73,29 @@ class Settings extends _$Settings {
       final selectedModel = _prefs.getString(AppConstants.keySelectedModel) ??
           AppConstants.aiModels.first;
 
+      // 讀取 AppPreferences 欄位
+      final messageDisplayModeString =
+          _prefs.getString('messageDisplayMode') ?? 'bubble';
+      final messageDisplayMode = messageDisplayModeString == 'document'
+          ? MessageDisplayMode.document
+          : MessageDisplayMode.bubble;
+
+      final fontSizeString = _prefs.getString('fontSize') ?? 'medium';
+      final fontSize = FontSize.values.firstWhere(
+        (e) => e.name == fontSizeString,
+        orElse: () => FontSize.medium,
+      );
+
+      final locale = _prefs.getString('locale') ?? 'zh_TW';
+
       return (
         serverUrl: serverUrl,
         geminiApiKey: geminiApiKey,
         themeMode: themeMode,
         selectedModel: selectedModel,
+        messageDisplayMode: messageDisplayMode,
+        fontSize: fontSize,
+        locale: locale,
       );
     } catch (e, stackTrace) {
       debugPrint('Failed to read settings: $e');
@@ -76,6 +111,9 @@ class Settings extends _$Settings {
         geminiApiKey: null,
         themeMode: ThemeMode.system,
         selectedModel: AppConstants.aiModels.first,
+        messageDisplayMode: MessageDisplayMode.bubble,
+        fontSize: FontSize.medium,
+        locale: 'zh_TW',
       );
 
   /// 安全地更新設定
@@ -87,6 +125,9 @@ class Settings extends _$Settings {
     bool removeApiKey = false,
     ThemeMode? themeMode,
     String? selectedModel,
+    MessageDisplayMode? messageDisplayMode,
+    FontSize? fontSize,
+    String? locale,
   }) async {
     if (!state.hasValue) {
       debugPrint('Cannot update settings: current state is not data');
@@ -101,6 +142,10 @@ class Settings extends _$Settings {
           removeApiKey ? null : (geminiApiKey ?? currentValue.geminiApiKey),
       themeMode: themeMode ?? currentValue.themeMode,
       selectedModel: selectedModel ?? currentValue.selectedModel,
+      messageDisplayMode:
+          messageDisplayMode ?? currentValue.messageDisplayMode,
+      fontSize: fontSize ?? currentValue.fontSize,
+      locale: locale ?? currentValue.locale,
     ));
 
     // 持久化到本地儲存
@@ -122,6 +167,18 @@ class Settings extends _$Settings {
       }
       if (selectedModel != null) {
         await _prefs.setString(AppConstants.keySelectedModel, selectedModel);
+      }
+      if (messageDisplayMode != null) {
+        await _prefs.setString(
+          'messageDisplayMode',
+          messageDisplayMode.name,
+        );
+      }
+      if (fontSize != null) {
+        await _prefs.setString('fontSize', fontSize.name);
+      }
+      if (locale != null) {
+        await _prefs.setString('locale', locale);
       }
     } catch (e, stackTrace) {
       debugPrint('Failed to persist settings: $e');
@@ -151,6 +208,31 @@ class Settings extends _$Settings {
   /// 更新選擇的模型
   Future<void> updateSelectedModel(String model) async {
     await _updateSettings(selectedModel: model);
+  }
+
+  /// 設定訊息顯示模式
+  Future<void> updateMessageDisplayMode(MessageDisplayMode mode) async {
+    await _updateSettings(messageDisplayMode: mode);
+  }
+
+  /// 切換訊息顯示模式
+  Future<void> toggleMessageDisplayMode() async {
+    if (!state.hasValue) return;
+    final current = state.requireValue.messageDisplayMode;
+    final newMode = current == MessageDisplayMode.bubble
+        ? MessageDisplayMode.document
+        : MessageDisplayMode.bubble;
+    await updateMessageDisplayMode(newMode);
+  }
+
+  /// 設定字體大小
+  Future<void> updateFontSize(FontSize size) async {
+    await _updateSettings(fontSize: size);
+  }
+
+  /// 設定語言
+  Future<void> updateLocale(String newLocale) async {
+    await _updateSettings(locale: newLocale);
   }
 
   /// 重置所有設定
@@ -209,6 +291,39 @@ String currentSelectedModel(Ref ref) {
     data: (data) => data.selectedModel,
     loading: () => AppConstants.aiModels.first,
     error: (_, __) => AppConstants.aiModels.first,
+  );
+}
+
+/// 當前訊息顯示模式 Provider
+@riverpod
+MessageDisplayMode currentMessageDisplayMode(Ref ref) {
+  final settings = ref.watch(settingsProvider);
+  return settings.when(
+    data: (data) => data.messageDisplayMode,
+    loading: () => MessageDisplayMode.bubble,
+    error: (_, __) => MessageDisplayMode.bubble,
+  );
+}
+
+/// 當前字體大小 Provider
+@riverpod
+FontSize currentFontSize(Ref ref) {
+  final settings = ref.watch(settingsProvider);
+  return settings.when(
+    data: (data) => data.fontSize,
+    loading: () => FontSize.medium,
+    error: (_, __) => FontSize.medium,
+  );
+}
+
+/// 當前語言設定 Provider
+@riverpod
+String currentLocale(Ref ref) {
+  final settings = ref.watch(settingsProvider);
+  return settings.when(
+    data: (data) => data.locale,
+    loading: () => 'zh_TW',
+    error: (_, __) => 'zh_TW',
   );
 }
 
