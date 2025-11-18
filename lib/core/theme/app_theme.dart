@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Primary Colors - Blue Theme
-  static const Color primaryColor = Color(0xFF1976D2);  // Material Blue 700
-  static const Color secondaryColor = Color(0xFF1565C0);  // Material Blue 800
-  static const Color tertiaryColor = Color(0xFF039BE5);  // Material Light Blue 600
+  // Primary Colors - Gemini-inspired Blue Theme
+  static const Color primaryColor = Color(0xFF1A73E8);  // Google Blue (Gemini Primary)
+  static const Color secondaryColor = Color(0xFF174EA6);  // Darker Blue
+  static const Color tertiaryColor = Color(0xFF4285F4);  // Lighter Blue
+  static const Color accentColor = Color(0xFF34A853);  // Green accent (for success states)
 
   // Light Theme
   static ThemeData lightTheme = ThemeData(

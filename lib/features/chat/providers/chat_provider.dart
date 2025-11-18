@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/chat_session.dart';
 import '../models/message.dart';
+import '../../../core/services/api_client.dart';
+import '../../../core/providers/app_preferences.dart';
 
 // 這行是必須的，用於程式碼生成
 // 執行 'dart run build_runner watch' 來生成程式碼
@@ -191,15 +193,22 @@ List<Message> currentMessages(Ref ref) {
   return session?.messages ?? [];
 }
 
+/// API Client Provider
+@riverpod
+ApiClient apiClient(Ref ref) {
+  final prefs = ref.watch(appPreferencesProvider);
+  final serverUrl = prefs.koopaServerUrl;
+  return ApiClient(baseUrl: serverUrl);
+}
+
 /// 聊天服務 Provider（用於發送訊息）
 ///
-/// 這會在後續實作時連接到 HTTP API
+/// 使用 Mock API 提供流式響應
 @riverpod
 class ChatService extends _$ChatService {
   @override
   FutureOr<void> build() {
     // 初始化聊天服務
-    // TODO: 連接到 koopa-server API
   }
 
   /// 發送訊息
@@ -207,7 +216,7 @@ class ChatService extends _$ChatService {
   /// 這是一個異步方法，會：
   /// 1. 添加使用者訊息
   /// 2. 呼叫 API
-  /// 3. 接收串流回應
+  /// 3. 接收串流回應（打字效果）
   /// 4. 更新 AI 訊息
   /// 5. 處理錯誤並提供用戶反饋
   Future<void> sendMessage(String content) async {
@@ -243,27 +252,59 @@ class ChatService extends _$ChatService {
     ref.read(chatSessionsProvider.notifier).updateSession(sessionWithAi);
 
     try {
-      // TODO: 3. 呼叫 API 並處理串流回應
-      // 這裡先用模擬回應
-      await Future.delayed(const Duration(seconds: 1));
+      // 3. 呼叫 API 並處理串流回應
+      final apiClient = ref.read(apiClientProvider);
+      final prefs = ref.read(appPreferencesProvider);
 
-      final mockResponse =
-          '這是一個模擬回應。真實的 API 整合將在後端完成後實作。';
+      final stream = apiClient.sendChatMessage(
+        message: content,
+        sessionId: sessionId,
+        model: session.model.name,
+      );
+
+      // 4. 處理流式響應，實現打字效果
+      await for (final chunk in stream) {
+        final streamingMessage = aiMessage.copyWith(
+          content: chunk,
+          isStreaming: true,
+        );
+
+        // 更新當前會話
+        final currentSession =
+            ref.read(chatSessionsProvider.notifier).getSession(sessionId);
+        if (currentSession == null) break;
+
+        final updatedStreamSession =
+            currentSession.updateLastMessage(streamingMessage);
+        ref.read(chatSessionsProvider.notifier).updateSession(
+              updatedStreamSession,
+            );
+      }
+
+      // 5. 標記為完成
       final completedMessage = aiMessage.copyWith(
-        content: mockResponse,
+        content: sessionWithAi.messages.last.content,
         isStreaming: false,
       );
 
-      final finalSession = sessionWithAi.updateLastMessage(completedMessage);
-      ref.read(chatSessionsProvider.notifier).updateSession(finalSession);
+      final finalSession =
+          ref.read(chatSessionsProvider.notifier).getSession(sessionId);
+      if (finalSession != null) {
+        final completedSession = finalSession.updateLastMessage(
+          completedMessage,
+        );
+        ref.read(chatSessionsProvider.notifier).updateSession(completedSession);
 
-      // 4. 如果是第一條訊息，自動更新標題
-      if (session.messages.isEmpty) {
-        final title = content.length > 30
-            ? '${content.substring(0, 30)}...'
-            : content;
-        final sessionWithTitle = finalSession.updateTitle(title);
-        ref.read(chatSessionsProvider.notifier).updateSession(sessionWithTitle);
+        // 6. 如果是第一條訊息，自動更新標題
+        if (session.messages.isEmpty) {
+          final title = content.length > 30
+              ? '${content.substring(0, 30)}...'
+              : content;
+          final sessionWithTitle = completedSession.updateTitle(title);
+          ref
+              .read(chatSessionsProvider.notifier)
+              .updateSession(sessionWithTitle);
+        }
       }
     } catch (e, stackTrace) {
       debugPrint('Failed to send message: $e');
@@ -279,9 +320,6 @@ class ChatService extends _$ChatService {
 
       final errorSession = sessionWithAi.updateLastMessage(errorMessage);
       ref.read(chatSessionsProvider.notifier).updateSession(errorSession);
-
-      // TODO: 可以選擇性地添加重試機制
-      // TODO: 可以選擇性地顯示 SnackBar 通知用戶
     }
   }
 }

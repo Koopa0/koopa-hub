@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/knowledge_document.dart';
+import '../../chat/providers/chat_provider.dart'; // 用於 apiClient
 
 part 'knowledge_provider.g.dart';
 
@@ -88,9 +89,13 @@ class KnowledgeDocuments extends _$KnowledgeDocuments {
   }
 
   /// 刪除文件
-  void removeDocument(String documentId) {
+  Future<void> removeDocument(String documentId) async {
+    // 呼叫 API 刪除向量資料
+    final apiClient = ref.read(apiClientProvider);
+    await apiClient.deleteDocument(documentId);
+
+    // 更新狀態
     state = state.where((doc) => doc.id != documentId).toList();
-    // TODO: 呼叫 API 刪除向量資料
   }
 
   /// 更新文件狀態
@@ -109,15 +114,18 @@ class KnowledgeDocuments extends _$KnowledgeDocuments {
     updateDocument(doc.markAsIndexing());
 
     try {
-      // TODO: 2. 呼叫 API 進行索引
-      // POST /knowledge/add
-      await Future.delayed(const Duration(seconds: 2)); // 模擬 API 呼叫
+      // 2. 呼叫 API 進行索引
+      final apiClient = ref.read(apiClientProvider);
+      final result = await apiClient.indexDocument(
+        path: doc.path,
+        size: doc.size,
+      );
 
       // 3. 標記為完成
       final updatedDoc = state.firstWhere((d) => d.id == documentId);
       updateDocument(updatedDoc.markAsIndexed(
-        summary: '這是一個模擬的文件摘要',
-        vectorCount: 42,
+        summary: result['summary'] as String,
+        vectorCount: result['vectorCount'] as int,
       ));
     } catch (e) {
       // 4. 如果失敗，標記為失敗
@@ -132,9 +140,13 @@ class KnowledgeDocuments extends _$KnowledgeDocuments {
   }
 
   /// 清空所有文件
-  void clearAll() {
+  Future<void> clearAll() async {
+    // 呼叫 API 清空所有向量資料
+    final apiClient = ref.read(apiClientProvider);
+    await apiClient.clearAllDocuments();
+
+    // 更新狀態
     state = [];
-    // TODO: 呼叫 API 清空所有向量資料
   }
 }
 
