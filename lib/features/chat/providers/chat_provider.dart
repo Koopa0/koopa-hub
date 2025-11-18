@@ -4,7 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/chat_session.dart';
 import '../models/message.dart';
 import '../../../core/services/api_client.dart';
-import '../../../core/providers/app_preferences.dart';
+import '../../../core/providers/app_preferences_provider.dart';
 
 // 這行是必須的，用於程式碼生成
 // 執行 'dart run build_runner watch' 來生成程式碼
@@ -196,9 +196,8 @@ List<Message> currentMessages(Ref ref) {
 /// API Client Provider
 @riverpod
 ApiClient apiClient(Ref ref) {
-  final prefs = ref.watch(appPreferencesProvider);
-  final serverUrl = prefs.koopaServerUrl;
-  return ApiClient(baseUrl: serverUrl);
+  // 使用預設的 baseUrl
+  return ApiClient();
 }
 
 /// 聊天服務 Provider（用於發送訊息）
@@ -254,12 +253,11 @@ class ChatService extends _$ChatService {
     try {
       // 3. 呼叫 API 並處理串流回應
       final apiClient = ref.read(apiClientProvider);
-      final prefs = ref.read(appPreferencesProvider);
 
       final stream = apiClient.sendChatMessage(
         message: content,
         sessionId: sessionId,
-        model: session.model.name,
+        model: session.selectedModel.name,
       );
 
       // 4. 處理流式響應，實現打字效果

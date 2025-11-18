@@ -1,4 +1,4 @@
-# Flutter/Dart
+# Flutter/Dart - 官方推薦的 .gitignore
 
 # Miscellaneous
 *.class
@@ -11,6 +11,7 @@
 .history
 .svn/
 migrate_working_dir/
+.fvm/
 
 # IntelliJ related
 *.iml
@@ -20,6 +21,7 @@ migrate_working_dir/
 
 # VS Code related
 .vscode/
+*.code-workspace
 
 # Flutter/Dart/Pub related
 **/doc/api/
@@ -32,7 +34,7 @@ migrate_working_dir/
 .pub/
 /build/
 
-# Generated files
+# Riverpod 程式碼生成文件
 *.g.dart
 *.freezed.dart
 *.gr.dart
@@ -43,32 +45,96 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
+# Android related
+**/android/**/gradle-wrapper.jar
+**/android/.gradle
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/android/key.properties
+*.jks
+*.keystore
+
 # Android Studio will place build artifacts here
 /android/app/debug
 /android/app/profile
 /android/app/release
 
-# Hive databases
+# iOS/XCode related
+**/ios/**/*.mode1v3
+**/ios/**/*.mode2v3
+**/ios/**/*.moved-aside
+**/ios/**/*.pbxuser
+**/ios/**/*.perspectivev3
+**/ios/**/*sync/
+**/ios/**/.sconsign.dblite
+**/ios/**/.tags*
+**/ios/**/.vagrant/
+**/ios/**/DerivedData/
+**/ios/**/Icon?
+**/ios/**/Pods/
+**/ios/**/.symlinks/
+**/ios/**/profile
+**/ios/**/xcuserdata
+**/ios/.generated/
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+
+# macOS
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+**/macos/Flutter/ephemeral/
+
+# Windows
+**/windows/flutter/generated_plugin_registrant.cc
+**/windows/flutter/generated_plugin_registrant.h
+**/windows/flutter/generated_plugins.cmake
+**/windows/flutter/ephemeral/
+
+# Linux
+**/linux/flutter/generated_plugin_registrant.cc
+**/linux/flutter/generated_plugin_registrant.h
+**/linux/flutter/generated_plugins.cmake
+**/linux/flutter/ephemeral/
+
+# Web
+**/web/flutter_service_worker.js
+**/web/version.json
+
+# Hive databases（本地資料庫文件）
 *.hive
 *.lock
 
-# Environment variables
+# Environment variables（敏感配置）
 .env
 .env.local
 .env.*.local
+.env.production
+.env.development
 
-# IDE
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-*.code-workspace
+# Coverage reports
+coverage/
+*.lcov
+test/.test_coverage.dart
 
-# Local History for Visual Studio Code
-.history/
+# Exceptions to above rules.
+!**/ios/**/default.mode1v3
+!**/ios/**/default.mode2v3
+!**/ios/**/default.pbxuser
+!**/ios/**/default.perspectivev3
 
-# Build outputs
+# Build outputs（構建產物）
 *.apk
 *.aab
 *.ipa
@@ -80,20 +146,33 @@ app.*.map.json
 *.tar.gz
 *.zip
 
-# Platform specific
-windows/
-macos/
-linux/
-android/
-ios/
+# Firebase
+**/ios/Runner/GoogleService-Info.plist
+**/android/app/google-services.json
+firebase_options.dart
 
-# Coverage
-coverage/
-*.lcov
+# API Keys and Secrets（API 密鑰和機密）
+**/lib/config/api_keys.dart
+**/lib/config/secrets.dart
 
-# Exceptions - keep these platform folders if they exist
-!windows/.gitkeep
-!macos/.gitkeep
-!linux/.gitkeep
-!android/.gitkeep
-!ios/.gitkeep
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# Logs
+logs/
+*.log.*
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# User-specific files（使用者特定文件）
+*.suo
+*.user
+*.userosscache
+*.sln.docstates

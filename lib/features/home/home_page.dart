@@ -8,6 +8,7 @@ import '../chat/pages/chat_page.dart';
 import '../chat/providers/chat_provider.dart';
 import '../knowledge/pages/knowledge_page.dart';
 import '../knowledge/providers/knowledge_provider.dart';
+import '../knowledge/models/knowledge_document.dart';
 import '../settings/pages/settings_page.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/constants/design_tokens.dart';
@@ -654,7 +655,7 @@ class _KnowledgeSidebarContent extends ConsumerWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    doc.fileName,
+                                    doc.name,
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -707,6 +708,11 @@ class _KnowledgeSidebarContent extends ConsumerWidget {
           Icons.error_outline,
           size: 18,
           color: Colors.red,
+        ),
+      DocumentStatus.deleted => Icon(
+          Icons.delete_outline,
+          size: 18,
+          color: theme.colorScheme.onSurfaceVariant,
         ),
     };
   }
