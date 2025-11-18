@@ -1,52 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/constants/app_constants.dart';
+import 'dashboard_view.dart';
 import '../chat/pages/chat_page.dart';
 import '../knowledge/pages/knowledge_page.dart';
 import '../settings/pages/settings_page.dart';
 
-/// 首頁選擇的索引 Provider
-///
-/// 使用 StateProvider 管理簡單的狀態
-/// 當前選擇的頁面索引：0=聊天, 1=知識庫, 2=設定
-final homePageIndexProvider = StateProvider<int>((ref) => 0);
+/// Current app mode provider
+final appModeProvider = StateProvider<String>((ref) => AppConstants.modeHome);
 
-/// 應用首頁
+/// Sidebar expanded state provider
+final sidebarExpandedProvider = StateProvider<bool>((ref) => true);
+
+/// Main application page with new Gemini-style layout
 ///
-/// Flutter 3.38 + Material 3 設計:
-/// - 響應式佈局（桌面端使用 NavigationRail，移動端可能使用 NavigationBar）
-/// - 平滑的頁面切換動畫
-/// - 符合 Material 3 設計規範
-///
-/// 架構設計:
-/// - 左側：導航欄（NavigationRail）
-/// - 右側：主要內容區域（PageView 或 IndexedStack）
+/// Layout structure:
+/// ┌──────┬────────┬──────────────────┐
+/// │ Tool │Sidebar │  Center Stage    │
+/// │ Bar  │(collap)│                  │
+/// └──────┴────────┴──────────────────┘
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 監聽當前選擇的頁面索引
-    final selectedIndex = ref.watch(homePageIndexProvider);
+    final currentMode = ref.watch(appModeProvider);
 
     return Scaffold(
       body: Row(
         children: [
-          // 左側：導航欄
-          _NavigationRailWidget(
-            selectedIndex: selectedIndex,
-            onDestinationSelected: (index) {
-              // 更新選擇的頁面
-              ref.read(homePageIndexProvider.notifier).state = index;
-            },
-          ),
+          // Left: Tool Selector Bar
+          const _ToolBar(),
 
-          // 分隔線
-          const VerticalDivider(thickness: 1, width: 1),
+          // Middle: Collapsible Sidebar
+          const _CollapsibleSidebar(),
 
-          // 右側：主要內容區域
+          // Right: Center Stage (main content)
           Expanded(
-            child: _ContentArea(selectedIndex: selectedIndex),
+            child: _CenterStage(mode: currentMode),
           ),
         ],
       ),
@@ -54,114 +46,176 @@ class HomePage extends ConsumerWidget {
   }
 }
 
-/// 導航欄 Widget
-///
-/// Material 3 NavigationRail:
-/// - 用於桌面和平板的側邊導航
-/// - 支援圖示和標籤
-/// - 支援展開/收合
-class _NavigationRailWidget extends StatelessWidget {
-  const _NavigationRailWidget({
-    required this.selectedIndex,
-    required this.onDestinationSelected,
-  });
-
-  final int selectedIndex;
-  final ValueChanged<int> onDestinationSelected;
+/// Tool selector bar (left-most)
+class _ToolBar extends ConsumerWidget {
+  const _ToolBar();
 
   @override
-  Widget build(BuildContext context) {
-    // 獲取主題顏色
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentMode = ref.watch(appModeProvider);
+    final theme = Theme.of(context);
 
-    return NavigationRail(
-      // 選擇的目的地索引
-      selectedIndex: selectedIndex,
-
-      // 點擊事件
-      onDestinationSelected: onDestinationSelected,
-
-      // 標籤類型
-      // Flutter 3.38: NavigationRail 改進的標籤顯示
-      // - all: 總是顯示標籤
-      // - selected: 只顯示選中項的標籤
-      // - none: 不顯示標籤
-      labelType: NavigationRailLabelType.selected,
-
-      // 是否可以展開
-      // 當為 true 時，可以點擊頂部按鈕展開導航欄
-      extended: false,
-
-      // 前導 Widget（顯示在導航項上方）
-      leading: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Column(
-          children: [
-            // 應用 Logo
-            Container(
-              width: 48,
-              height: 48,
+    return Container(
+      width: AppConstants.toolbarWidth,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLowest,
+        border: Border(
+          right: BorderSide(
+            color: theme.colorScheme.outlineVariant,
+            width: 1,
+          ),
+        ),
+      ),
+      child: Column(
+        children: [
+          // App Logo
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Container(
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 Icons.psychology_outlined,
-                size: 28,
-                color: colorScheme.onPrimaryContainer,
+                color: theme.colorScheme.onPrimaryContainer,
               ),
             ),
-            const SizedBox(height: 8),
-            // 應用名稱
-            Text(
-              'Koopa',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-          ],
-        ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Mode buttons
+          _ModeButton(
+            icon: Icons.dashboard_outlined,
+            selectedIcon: Icons.dashboard,
+            mode: AppConstants.modeHome,
+            label: 'Home',
+            isSelected: currentMode == AppConstants.modeHome,
+            onTap: () => ref.read(appModeProvider.notifier).state =
+                AppConstants.modeHome,
+          ),
+
+          _ModeButton(
+            icon: Icons.chat_bubble_outline,
+            selectedIcon: Icons.chat_bubble,
+            mode: AppConstants.modeChat,
+            label: 'Chat',
+            isSelected: currentMode == AppConstants.modeChat,
+            onTap: () => ref.read(appModeProvider.notifier).state =
+                AppConstants.modeChat,
+          ),
+
+          _ModeButton(
+            icon: Icons.account_tree_outlined,
+            selectedIcon: Icons.account_tree,
+            mode: AppConstants.modeMindMap,
+            label: 'Mind Map',
+            isSelected: currentMode == AppConstants.modeMindMap,
+            onTap: () => ref.read(appModeProvider.notifier).state =
+                AppConstants.modeMindMap,
+          ),
+
+          _ModeButton(
+            icon: Icons.library_books_outlined,
+            selectedIcon: Icons.library_books,
+            mode: AppConstants.modeKnowledge,
+            label: 'Knowledge',
+            isSelected: currentMode == AppConstants.modeKnowledge,
+            onTap: () => ref.read(appModeProvider.notifier).state =
+                AppConstants.modeKnowledge,
+          ),
+
+          _ModeButton(
+            icon: Icons.edit_note_outlined,
+            selectedIcon: Icons.edit_note,
+            mode: AppConstants.modeCanvas,
+            label: 'Canvas',
+            isSelected: currentMode == AppConstants.modeCanvas,
+            onTap: () => ref.read(appModeProvider.notifier).state =
+                AppConstants.modeCanvas,
+          ),
+
+          _ModeButton(
+            icon: Icons.compare_outlined,
+            selectedIcon: Icons.compare,
+            mode: AppConstants.modeArena,
+            label: 'Arena',
+            isSelected: currentMode == AppConstants.modeArena,
+            onTap: () => ref.read(appModeProvider.notifier).state =
+                AppConstants.modeArena,
+          ),
+
+          const Spacer(),
+
+          // Settings at bottom
+          _ModeButton(
+            icon: Icons.settings_outlined,
+            selectedIcon: Icons.settings,
+            mode: 'settings',
+            label: 'Settings',
+            isSelected: currentMode == 'settings',
+            onTap: () =>
+                ref.read(appModeProvider.notifier).state = 'settings',
+          ),
+
+          const SizedBox(height: 16),
+        ],
       ),
+    );
+  }
+}
 
-      // 導航目的地列表
-      destinations: const [
-        // 聊天頁面
-        NavigationRailDestination(
-          icon: Icon(Icons.chat_bubble_outline),
-          selectedIcon: Icon(Icons.chat_bubble),
-          label: Text('聊天'),
-        ),
+/// Mode button widget
+class _ModeButton extends StatelessWidget {
+  const _ModeButton({
+    required this.icon,
+    required this.selectedIcon,
+    required this.mode,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
 
-        // 知識庫頁面
-        NavigationRailDestination(
-          icon: Icon(Icons.library_books_outlined),
-          selectedIcon: Icon(Icons.library_books),
-          label: Text('知識庫'),
-        ),
+  final IconData icon;
+  final IconData selectedIcon;
+  final String mode;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
 
-        // 設定頁面
-        NavigationRailDestination(
-          icon: Icon(Icons.settings_outlined),
-          selectedIcon: Icon(Icons.settings),
-          label: Text('設定'),
-        ),
-      ],
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
 
-      // 尾隨 Widget（顯示在導航項下方）
-      trailing: Expanded(
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: IconButton(
-              icon: const Icon(Icons.help_outline),
-              onPressed: () {
-                // TODO: 顯示說明文檔
-                debugPrint('Show help');
-              },
-              tooltip: '說明',
+    return Tooltip(
+      message: label,
+      waitDuration: const Duration(milliseconds: 500),
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          width: AppConstants.toolbarWidth,
+          height: 56,
+          decoration: BoxDecoration(
+            color: isSelected
+                ? theme.colorScheme.secondaryContainer.withOpacity(0.5)
+                : Colors.transparent,
+            border: Border(
+              left: BorderSide(
+                color: isSelected
+                    ? theme.colorScheme.primary
+                    : Colors.transparent,
+                width: 3,
+              ),
             ),
+          ),
+          child: Icon(
+            isSelected ? selectedIcon : icon,
+            color: isSelected
+                ? theme.colorScheme.primary
+                : theme.colorScheme.onSurfaceVariant,
           ),
         ),
       ),
@@ -169,58 +223,207 @@ class _NavigationRailWidget extends StatelessWidget {
   }
 }
 
-/// 內容區域 Widget
-///
-/// 使用 IndexedStack 而不是 PageView:
-/// - IndexedStack 保持每個頁面的狀態
-/// - 切換頁面時不會重新建構 widget
-/// - 適合需要保持狀態的場景
-///
-/// 如果需要滑動切換，可以改用 PageView
-class _ContentArea extends StatelessWidget {
-  const _ContentArea({required this.selectedIndex});
-
-  final int selectedIndex;
+/// Collapsible sidebar for conversations/history
+class _CollapsibleSidebar extends ConsumerWidget {
+  const _CollapsibleSidebar();
 
   @override
-  Widget build(BuildContext context) {
-    // 使用 AnimatedSwitcher 提供平滑的切換動畫
-    //
-    // Flutter 3.38: 改進的動畫性能
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 250),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isExpanded = ref.watch(sidebarExpandedProvider);
+    final currentMode = ref.watch(appModeProvider);
+    final theme = Theme.of(context);
 
-      // 使用 FadeTransition + SlideTransition 組合
-      // 創造更流暢的轉場效果
-      transitionBuilder: (child, animation) {
-        return FadeTransition(
-          opacity: animation,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0.02, 0),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeInOutCubicEmphasized,
-            )),
-            child: child,
+    // Only show sidebar in certain modes
+    final showSidebar = currentMode == AppConstants.modeChat ||
+        currentMode == AppConstants.modeKnowledge ||
+        currentMode == AppConstants.modeCanvas;
+
+    if (!showSidebar) return const SizedBox.shrink();
+
+    return AnimatedContainer(
+      duration: AppConstants.mediumDuration,
+      curve: Curves.easeInOutCubic,
+      width: isExpanded
+          ? AppConstants.sidebarWidthExpanded
+          : AppConstants.sidebarWidthCollapsed,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLowest,
+        border: Border(
+          right: BorderSide(
+            color: theme.colorScheme.outlineVariant,
+            width: 1,
           ),
-        );
-      },
+        ),
+      ),
+      child: Column(
+        children: [
+          // Header with toggle button
+          _SidebarHeader(isExpanded: isExpanded),
 
-      // 根據索引顯示不同頁面
-      // 使用 ValueKey 確保 AnimatedSwitcher 能正確識別不同頁面
-      child: _getPage(selectedIndex),
+          const Divider(height: 1),
+
+          // Content based on mode
+          Expanded(
+            child: _getSidebarContent(currentMode, isExpanded),
+          ),
+        ],
+      ),
     );
   }
 
-  /// 根據索引返回對應的頁面 Widget
-  Widget _getPage(int index) {
-    return switch (index) {
-      0 => const ChatPage(key: ValueKey('chat')),
-      1 => const KnowledgePage(key: ValueKey('knowledge')),
-      2 => const SettingsPage(key: ValueKey('settings')),
-      _ => const ChatPage(key: ValueKey('chat')),
+  Widget _getSidebarContent(String mode, bool isExpanded) {
+    return switch (mode) {
+      AppConstants.modeChat => _ChatSidebarContent(isExpanded: isExpanded),
+      AppConstants.modeKnowledge =>
+        _KnowledgeSidebarContent(isExpanded: isExpanded),
+      _ => const SizedBox.shrink(),
+    };
+  }
+}
+
+/// Sidebar header with toggle button
+class _SidebarHeader extends ConsumerWidget {
+  const _SidebarHeader({required this.isExpanded});
+
+  final bool isExpanded;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      child: Row(
+        children: [
+          if (isExpanded)
+            Expanded(
+              child: Text(
+                'Conversations',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          IconButton(
+            icon: Icon(
+              isExpanded ? Icons.chevron_left : Icons.chevron_right,
+              size: 20,
+            ),
+            onPressed: () {
+              ref.read(sidebarExpandedProvider.notifier).state = !isExpanded;
+            },
+            tooltip: isExpanded ? 'Collapse' : 'Expand',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Chat mode sidebar content (conversation list)
+class _ChatSidebarContent extends StatelessWidget {
+  const _ChatSidebarContent({required this.isExpanded});
+
+  final bool isExpanded;
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: Implement conversation list
+    return Center(
+      child: Text(isExpanded ? 'Conversations' : ''),
+    );
+  }
+}
+
+/// Knowledge mode sidebar content (document list)
+class _KnowledgeSidebarContent extends StatelessWidget {
+  const _KnowledgeSidebarContent({required this.isExpanded});
+
+  final bool isExpanded;
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: Implement document list
+    return Center(
+      child: Text(isExpanded ? 'Documents' : ''),
+    );
+  }
+}
+
+/// Center stage - main content area
+class _CenterStage extends StatelessWidget {
+  const _CenterStage({required this.mode});
+
+  final String mode;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: AppConstants.mediumDuration,
+      switchInCurve: Curves.easeInOutCubic,
+      switchOutCurve: Curves.easeInOutCubic,
+      child: _getContent(mode),
+    );
+  }
+
+  Widget _getContent(String mode) {
+    return switch (mode) {
+      AppConstants.modeHome => const DashboardView(key: ValueKey('home')),
+      AppConstants.modeChat => const ChatPage(key: ValueKey('chat')),
+      AppConstants.modeKnowledge =>
+        const KnowledgePage(key: ValueKey('knowledge')),
+      'settings' => const SettingsPage(key: ValueKey('settings')),
+      _ => _ComingSoonView(mode: mode, key: ValueKey(mode)),
+    };
+  }
+}
+
+/// Coming soon placeholder for unimplemented modes
+class _ComingSoonView extends StatelessWidget {
+  const _ComingSoonView({required this.mode, super.key});
+
+  final String mode;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.construction_outlined,
+            size: 80,
+            color: theme.colorScheme.outlineVariant,
+          ),
+          const SizedBox(height: 24),
+          Text(
+            _getModeName(mode),
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Coming soon...',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getModeName(String mode) {
+    return switch (mode) {
+      AppConstants.modeMindMap => 'Mind Map Mode',
+      AppConstants.modeCanvas => 'Canvas Mode',
+      AppConstants.modeArena => 'Multi-Model Arena',
+      AppConstants.modeAudio => 'Audio Overview',
+      AppConstants.modeTools => 'MCP Tools',
+      _ => 'Unknown Mode',
     };
   }
 }
