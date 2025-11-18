@@ -556,10 +556,6 @@ class _SessionTile extends StatelessWidget {
         ],
       ),
     );
-
-    if (confirmed == true) {
-      onDelete();
-    }
   }
 
   /// Format timestamp for display

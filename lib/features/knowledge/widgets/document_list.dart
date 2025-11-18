@@ -413,9 +413,5 @@ class _DocumentCard extends ConsumerWidget {
         ],
       ),
     );
-
-    if (confirmed == true) {
-      ref.read(knowledgeDocumentsProvider.notifier).removeDocument(document.id);
-    }
   }
 }
