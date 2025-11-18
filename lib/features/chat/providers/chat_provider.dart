@@ -229,6 +229,32 @@ EnhancedMockApi enhancedMockApi(Ref ref) {
   return EnhancedMockApi();
 }
 
+/// Artifact 側邊欄狀態 Provider
+///
+/// 管理側邊欄的顯示/隱藏和當前顯示的 Artifact
+@riverpod
+class ArtifactSidebar extends _$ArtifactSidebar {
+  @override
+  Artifact? build() {
+    return null;
+  }
+
+  /// 顯示 Artifact
+  void showArtifact(Artifact artifact) {
+    state = artifact;
+  }
+
+  /// 隱藏側邊欄
+  void hide() {
+    state = null;
+  }
+
+  /// 切換顯示狀態
+  void toggle() {
+    state = null;
+  }
+}
+
 /// 聊天服務 Provider（用於發送訊息）
 ///
 /// 使用 Mock API 提供流式響應
@@ -301,6 +327,12 @@ class ChatService extends _$ChatService {
 
       // 4. 處理事件流
       await for (final event in stream) {
+        // ✅ 檢查 provider 是否仍然存在（避免 disposal 錯誤）
+        if (!ref.mounted) {
+          debugPrint('Provider disposed, stopping stream processing');
+          break;
+        }
+
         switch (event.type) {
           case ResponseEventType.thinkingStep:
             // 更新思考步驟
@@ -401,6 +433,9 @@ class ChatService extends _$ChatService {
             break;
 
           case ResponseEventType.complete:
+            // ✅ 檢查 provider 是否仍然存在
+            if (!ref.mounted) break;
+
             // 標記為完成
             final completedMessage = aiMessage.copyWith(
               content: textContent,
@@ -432,6 +467,9 @@ class ChatService extends _$ChatService {
       debugPrint('Failed to send message: $e');
       debugPrint('Stack trace: $stackTrace');
 
+      // ✅ 檢查 provider 是否仍然存在
+      if (!ref.mounted) return;
+
       // 更新 AI 訊息為錯誤狀態
       final errorMessage = aiMessage.copyWith(
         content: '❌ 發送失敗\n\n'
@@ -455,6 +493,9 @@ class ChatService extends _$ChatService {
     List<SourceCitation>? sources,
     Artifact? artifact,
   }) {
+    // ✅ 檢查 provider 是否仍然存在
+    if (!ref.mounted) return;
+
     final streamingMessage = aiMessage.copyWith(
       content: content,
       isStreaming: true,

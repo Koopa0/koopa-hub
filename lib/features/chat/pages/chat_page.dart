@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/chat_provider.dart';
+import '../models/artifact.dart';
 import '../widgets/session_sidebar.dart';
 import '../widgets/message_list.dart';
 import '../widgets/chat_input.dart';
 import '../widgets/model_selector.dart';
+import '../widgets/artifact_viewer.dart';
 
 /// Chat Page - Main conversation interface
 ///
@@ -109,41 +111,140 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-/// Chat Area - Active conversation view
+/// Chat Area - Active conversation view with optional Artifact sidebar
 ///
 /// **Component Composition:**
 /// This widget demonstrates Flutter's composition pattern:
-/// - TopBar: Session info and controls
-/// - MessageList: Scrollable conversation history
-/// - ChatInput: User message entry
+/// - Left: Chat area (TopBar, MessageList, ChatInput)
+/// - Right: Artifact sidebar (collapsible)
 ///
-/// **Dart 3.10 Pattern:**
-/// Uses const constructors throughout for performance
-class _ChatArea extends StatelessWidget {
+/// **Layout:**
+/// ```
+/// ┌───────────────────┬─────────────┐
+/// │   Chat Area       │  Artifact   │
+/// │   (70%)           │  Sidebar    │
+/// │                   │  (30%)      │
+/// └───────────────────┴─────────────┘
+/// ```
+class _ChatArea extends ConsumerWidget {
   const _ChatArea();
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final artifact = ref.watch(artifactSidebarProvider);
+    final showSidebar = artifact != null;
+
+    return Row(
       children: [
-        // Top bar with session title and controls
-        const _TopBar(),
+        // 左側：聊天區域
+        Expanded(
+          flex: showSidebar ? 7 : 10, // 70% when sidebar shown, 100% otherwise
+          child: Column(
+            children: [
+              // Top bar with session title and controls
+              const _TopBar(),
 
-        // Material 3: Use Divider for visual separation
-        // height: 1 for minimal thickness
-        const Divider(height: 1),
+              // Material 3: Use Divider for visual separation
+              const Divider(height: 1),
 
-        // Message list takes remaining space
-        // Expanded: Flexes to fill available vertical space
-        const Expanded(
-          child: MessageList(),
+              // Message list takes remaining space
+              const Expanded(
+                child: MessageList(),
+              ),
+
+              const Divider(height: 1),
+
+              // Input field at bottom (fixed position)
+              const ChatInput(),
+            ],
+          ),
         ),
 
-        const Divider(height: 1),
+        // 右側：Artifact 側邊欄（可隱藏）
+        if (showSidebar) ...[
+          // 分隔線
+          VerticalDivider(
+            width: 1,
+            thickness: 1,
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
 
-        // Input field at bottom (fixed position)
-        const ChatInput(),
+          // Artifact 側邊欄
+          Expanded(
+            flex: 3, // 30%
+            child: _ArtifactSidebar(artifact: artifact),
+          ),
+        ],
       ],
+    );
+  }
+}
+
+/// Artifact Sidebar - Displays AI-generated artifacts
+///
+/// **Features:**
+/// - Always visible while artifact is selected
+/// - Close button to hide sidebar
+/// - Full artifact viewer integrated
+class _ArtifactSidebar extends ConsumerWidget {
+  const _ArtifactSidebar({required this.artifact});
+
+  final Artifact artifact;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+
+    return Container(
+      color: theme.colorScheme.surfaceContainerLowest,
+      child: Column(
+        children: [
+          // 側邊欄標題列
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: theme.colorScheme.outlineVariant,
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.auto_awesome,
+                  size: 20,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Artifact',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  onPressed: () {
+                    ref.read(artifactSidebarProvider.notifier).hide();
+                  },
+                  tooltip: '關閉側邊欄',
+                ),
+              ],
+            ),
+          ),
+
+          // Artifact 檢視器
+          Expanded(
+            child: ArtifactViewer(
+              artifact: artifact,
+              onClose: null, // 不需要關閉按鈕（已在標題列）
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

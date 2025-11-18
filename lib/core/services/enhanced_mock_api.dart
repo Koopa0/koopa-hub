@@ -182,15 +182,31 @@ class EnhancedMockApi {
   }
 
   /// Stream text response
+  ///
+  /// 支援中文和英文的字元級串流
+  /// 將文字分成小塊（2-3個字元）進行串流，以支援中文打字效果
   Stream<ResponseEvent> _streamTextResponse(String message, String model) async* {
     final response = _generateResponse(message, model);
-    final words = response.split(' ');
+
+    // 使用字元級串流，每次發送 2-3 個字元
+    // 這樣可以支援中文、英文和混合文字
+    const int chunkSize = 3;
     String accumulated = '';
 
-    for (int i = 0; i < words.length; i++) {
-      accumulated += (i == 0 ? '' : ' ') + words[i];
-      await Future.delayed(Duration(milliseconds: 30 + _random.nextInt(70)));
+    for (int i = 0; i < response.length; i += chunkSize) {
+      final end = (i + chunkSize > response.length)
+          ? response.length
+          : i + chunkSize;
+      accumulated = response.substring(0, end);
+
+      // 隨機延遲 50-100ms，模擬真實的打字速度
+      await Future.delayed(Duration(milliseconds: 50 + _random.nextInt(50)));
       yield ResponseEvent(ResponseEventType.textChunk, accumulated);
+    }
+
+    // 確保最後一個字元也被發送
+    if (accumulated != response) {
+      yield ResponseEvent(ResponseEventType.textChunk, response);
     }
   }
 
